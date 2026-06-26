@@ -7,7 +7,7 @@ import { Results } from "./components/Results";
 import { SectionHeader } from "./components/Inputs";
 import { SignaturePad } from "./components/SignaturePad";
 import { Archive } from "./components/Archive";
-import { LOAD_STEPS, initialReadings, initialPressures, DEFAULT_PROJECT } from "./config/testConfig";
+import { LOAD_STEPS, initialReadings, DEFAULT_PROJECT } from "./config/testConfig";
 import { T } from "./config/theme";
 import { calcPalo, validateTest } from "./utils/calculations";
 import { exportReport } from "./pdf/exportReport";
@@ -18,7 +18,6 @@ import { listTests, nextReportId, saveTest } from "./utils/storage";
 export default function App() {
   const [data, setData] = useState(DEFAULT_PROJECT);
   const [readings, setReadings] = useState(initialReadings);
-  const [pressures, setPressures] = useState(initialPressures);
   const [photo, setPhoto] = useState(null);
   const [archive, setArchive] = useState(listTests());
   const chartRef = useRef(null);
@@ -33,17 +32,19 @@ export default function App() {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const result = useMemo(() => calcPalo({ readings, loadSteps: LOAD_STEPS, designLoadSLE: data.designLoadSLE, calibrationCoeff: data.calibrationCoeff }), [readings, data.designLoadSLE, data.calibrationCoeff]);
+  const result = useMemo(() => calcPalo({
+    readings,
+    loadSteps: LOAD_STEPS,
+    designLoadSLE: data.designLoadSLE
+  }), [readings, data.designLoadSLE]);
   const errors = useMemo(() => validateTest({ data, result, photo }), [data, result, photo]);
 
   const setReading = (key, value) => setReadings((prev) => ({ ...prev, [key]: value }));
-  // Pressioni/bar calcolati automaticamente: il perito inserisce solo i 3 comparatori.
 
   function newTest() {
     if (!window.confirm("Creare una nuova prova? I dati non salvati verranno persi.")) return;
     setData({ ...DEFAULT_PROJECT, reportId: nextReportId() });
     setReadings(initialReadings());
-    setPressures(initialPressures());
     setPhoto(null);
   }
 
@@ -51,7 +52,7 @@ export default function App() {
     const id = data.reportId || nextReportId();
     const nextData = { ...data, reportId: id };
     setData(nextData);
-    const record = { id, savedAt: new Date().toISOString(), data: nextData, readings, pressures, photo };
+    const record = { id, savedAt: new Date().toISOString(), data: nextData, readings, photo };
     setArchive(saveTest(record));
     window.alert(`Prova ${id} salvata in archivio.`);
   }
@@ -59,7 +60,6 @@ export default function App() {
   function openRecord(record) {
     setData(record.data);
     setReadings(record.readings || initialReadings());
-    setPressures(record.pressures || initialPressures());
     setPhoto(record.photo || null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -67,7 +67,6 @@ export default function App() {
   function duplicateRecord(record) {
     setData({ ...record.data, reportId: nextReportId(), pileId: `${record.data.pileId || "P"}-COPIA` });
     setReadings(record.readings || initialReadings());
-    setPressures(record.pressures || initialPressures());
     setPhoto(record.photo || null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -77,7 +76,11 @@ export default function App() {
   }
 
   function exportRecord(record) {
-    const recResult = calcPalo({ readings: record.readings, loadSteps: LOAD_STEPS, designLoadSLE: record.data.designLoadSLE, calibrationCoeff: record.data.calibrationCoeff });
+    const recResult = calcPalo({
+      readings: record.readings,
+      loadSteps: LOAD_STEPS,
+      designLoadSLE: record.data.designLoadSLE
+    });
     exportReport({ data: record.data, result: recResult, photo: record.photo, chartNode: null });
   }
 
@@ -91,9 +94,9 @@ export default function App() {
 
       <section className="summary-strip">
         <div><span>SLE progetto</span><b>{fmt(Number(data.designLoadSLE || 0), 2)} kN</b></div>
-        <div><span>Carico max prova</span><b>{fmt(Number(data.testLoad || 0), 2)} kN</b></div>
+        <div><span>Carico max prova</span><b>{fmt(Number(data.designLoadSLE || 0) * Number(data.testFactor || 1.5), 2)} kN</b></div>
         <div><span>Diametro</span><b>{data.diameter || "-"} mm</b></div>
-        <div><span>Coeff. taratura</span><b>{data.calibrationCoeff ? `${fmt(Number(data.calibrationCoeff || 0), 3)} kN/bar` : "Mancante"}</b></div>
+        <div><span>Martinetto</span><b>30 ton / 700 bar</b></div>
         <div><span>Foto prova</span><b>{photo ? "Presente" : "Mancante"}</b></div>
       </section>
 
@@ -102,7 +105,7 @@ export default function App() {
       <section className="workbench">
         <div className="left-col">
           <SectionHeader label="Tabella prova - 3 comparatori" step="1" color={T.accentBlue} />
-          <p className="hint">L’app genera automaticamente kN e bar per ogni gradino. Il perito inserisce solo le letture dei 3 comparatori.</p>
+          <p className="hint">L’app genera automaticamente tutti i gradini, i kN e i bar. Il tecnico inserisce solo le letture dei 3 comparatori per ogni gradino.</p>
           <div className="steps one-col">
             {result.rows.map((row, index) => (
               <StepTable
@@ -111,7 +114,6 @@ export default function App() {
                 load={row.load}
                 targetLoad={row.targetLoad}
                 pressure={row.pressure}
-                onPressureChange={() => {}}
                 value={readings[row.key]}
                 onChange={(value) => setReading(row.key, value)}
                 color={row.unload ? T.accentOrange : row.cycle === "esercizio" ? T.cycle1 : row.unload ? T.accentOrange : T.cycle2}

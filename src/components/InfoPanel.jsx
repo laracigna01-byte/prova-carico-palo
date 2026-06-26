@@ -31,7 +31,6 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
             <TextInput label="Impresa" value={data.impresa} onChange={upd("impresa")} />
             <TextInput label="Tecnico esecutore" value={data.tecnico} onChange={upd("tecnico")} />
           </div>
-          <TextArea label="Oggetto" value={data.oggetto} onChange={upd("oggetto")} placeholder="Oggetto della prova" />
 
           <SectionHeader label="Dati palo" step="B" color={T.accentOrange} />
           <div className="grid small">
@@ -46,7 +45,7 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
   onChange={(value) =>
     setData((prev) => {
       const ne = Number(value || 0);
-      const coeff = Number(prev.testFactor || 1);
+      const coeff = Number(prev.testFactor || 1.5);
       return {
         ...prev,
         designLoadSLE: value,
@@ -57,12 +56,12 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
 />
 
 <NumberInput
-  label="Coeff. collaudo automatico"
-  value={data.testFactor || 1}
+  label="Coefficiente prova"
+  value={data.testFactor || 1.5}
   onChange={(value) =>
     setData((prev) => {
       const ne = Number(prev.designLoadSLE || 0);
-      const coeff = Number(value || 1);
+      const coeff = Number(value || 1.5);
       return {
         ...prev,
         testFactor: value,
@@ -73,7 +72,7 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
 />
 
 <NumberInput
-  label="Carico max collaudo 150% (kN)"
+  label="Carico massimo prova (kN)"
   value={data.testLoad}
   readOnly
 />
@@ -81,12 +80,16 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
 
           <SectionHeader label="Strumentazione" step="C" color={T.accent} />
           <div className="grid small">
-            <TextInput label="Martinetto" value={data.jackId} onChange={upd("jackId")} />
-            <TextInput label="Manometro / cella" value={data.manometerId} onChange={upd("manometerId")} />
+            <TextInput label="Martinetto" value={data.jackId} onChange={upd("jackId")} placeholder="Martinetto 30 ton" />
+            <TextInput label="Manometro / cella" value={data.manometerId} onChange={upd("manometerId")} placeholder="Manometro 700 bar" />
             <TextInput label="Comparatori" value={data.comparatorId} onChange={upd("comparatorId")} />
-            <NumberInput label="Coeff. taratura (kN/bar)" value={data.calibrationCoeff || ""} onChange={upd("calibrationCoeff")} placeholder="es. 4,00 kN/bar" />
             <TextInput label="Presenti" value={data.presenti} onChange={upd("presenti")} />
           </div>
+          <div className="norm-box">
+            <b>Taratura fissa di calcolo</b>
+            <span>Martinetto 30 ton = 294,30 kN · Manometro 700 bar. I bar vengono calcolati automaticamente in proporzione al carico kN dello step.</span>
+          </div>
+          <div className="note mini"><b>Calcolo automatico bar:</b> bar step = kN step × 700 / 294,30. Il perito inserisce solo il carico di esercizio e le letture dei 3 comparatori.</div>
 
           <SectionHeader label="Note e foto" step="D" color={T.accentYellow} />
           <TextArea label="Note tecniche" value={data.note} onChange={upd("note")} placeholder="Annotazioni su condizioni di prova, attrezzatura, anomalie, dati del progettista..." />

@@ -282,3 +282,21 @@ body.theme-light .pressure-row input {
   .pressure-row { grid-template-columns: 1fr; }
   .pressure-row input { min-height: 46px; font-size: 16px; }
 }
+.pressure-row output {
+  width: 100%;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  color: #e6edf3;
+  padding: 9px 10px;
+  text-align: right;
+  font: 18px ui-monospace, Consolas, monospace;
+}
+body.theme-light .pressure-row output {
+  background: #ffffff;
+  color: #111827;
+  border-color: #d1d5db;
+}
+@media (max-width: 760px) {
+  .pressure-row output { min-height: 46px; font-size: 16px; }
+}

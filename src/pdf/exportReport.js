@@ -66,27 +66,6 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.text(safeText(value, "—"), x + 1, y + 5.1, { maxWidth: w - 2 });
 }
 
-function drawWrappedCell(pdf, x, y, w, label, value, options = {}) {
-  const lineHeight = options.lineHeight || 2.7;
-  const lines = pdf.splitTextToSize(safeText(value, "—"), w - 2);
-  const height = 5.1 + lines.length * lineHeight + 1;
-
-  pdf.setDrawColor(185, 185, 185);
-  pdf.rect(x, y, w, height);
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(4.5);
-  pdf.setTextColor(90, 90, 90);
-  pdf.text(label, x + 1, y + 2.3);
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.4);
-  pdf.setTextColor(10, 10, 10);
-  pdf.text(lines, x + 1, y + 5.1, { maxWidth: w - 2 });
-
-  return y + height;
-}
-
 function addContainedImage(pdf, dataUrl, type, boxX, boxY, boxW, boxH) {
   const props = pdf.getImageProperties(dataUrl);
   const imgRatio = props.width / props.height;
@@ -116,6 +95,7 @@ function drawFooter(pdf, ML, PW, PH) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(5.2);
   pdf.setTextColor(100, 100, 100);
+  pdf.text(`Minuta di prova - ${NORME.uni} - ${NORME.dm}`, ML, PH - 4);
   pdf.text("Pagina 1/1", PW - ML, PH - 4, { align: "right" });
 }
 
@@ -128,7 +108,7 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(5.8);
   pdf.setTextColor(20, 20, 20);
-  pdf.text("Curva unica carico - cedimento", x + 2, y + 4);
+  pdf.text("Curva carico applicato - cedimento", x + 2, y + 4);
 
   const validPoints = rows
     .filter((r) => Number.isFinite(Number(r.reading)) && Number.isFinite(Number(r.load)))
@@ -176,7 +156,7 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
   pdf.setFontSize(4.7);
   pdf.setTextColor(70, 70, 70);
   pdf.text("Cedimento [mm]", plotX + plotW / 2, y + h - 3.2, { align: "center" });
-  pdf.text("Carico [kN]", x + 4.4, plotY + plotH / 2, { angle: 90 });
+  pdf.text("Carico calcolato [kN]", x + 4.4, plotY + plotH / 2, { angle: 90 });
 
   pdf.setDrawColor(52, 107, 180);
   pdf.setFillColor(52, 107, 180);
@@ -189,7 +169,10 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
 
     if (prev) pdf.line(prev.x, prev.y, px, py);
 
-    pdf.circle(px, py, 1.2, "F");
+    pdf.circle(px, py, 1, "F");
+    pdf.setFontSize(3.7);
+    pdf.text(String(p.label), px + 1.2, py - 1.5);
+
     prev = { x: px, y: py };
   });
 
@@ -203,12 +186,15 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
 
     if (prev) pdf.line(prev.x, prev.y, px, py);
 
-    pdf.circle(px, py, 1.2, "F");
+    pdf.circle(px, py, 1, "F");
+    pdf.setFontSize(3.7);
+    pdf.text(String(p.label).replace("Scarico ", "S"), px + 1.2, py - 1.5);
+
     prev = { x: px, y: py };
   });
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.2);
+  pdf.setFontSize(4.6);
   pdf.setTextColor(52, 107, 180);
   pdf.text("Carico", plotX + plotW - 18, plotY + 4);
   pdf.setTextColor(150, 80, 80);
@@ -236,7 +222,7 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   const logo = await imageToDataUrl("/logo-dismat.jpg").catch(() => null);
 
-  let y = 5;
+  let y = 7;
 
   if (logo) pdf.addImage(logo, "JPEG", ML, y, 15, 15);
 
@@ -296,9 +282,6 @@ export async function exportReport({ data, result, photo = null, preview = false
   drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Località", data.localita);
   ly += h;
 
-  ly = drawWrappedCell(pdf, leftX, ly, leftW, "Oggetto", data.oggetto);
-  ly += 2;
-
   drawCompactCell(pdf, leftX, ly, w3, h, "Direzione lavori", data.direzioneLavori);
   drawCompactCell(pdf, leftX + w3, ly, w3, h, "Impresa", data.impresa);
   drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Riferimento prova", data.reportId || data.pileId);
@@ -309,17 +292,18 @@ export async function exportReport({ data, result, photo = null, preview = false
   drawCompactCell(pdf, leftX, ly, w4, h, "Identificativo palo", data.pileId);
   drawCompactCell(pdf, leftX + w4, ly, w4, h, "Lunghezza", `${safeText(data.length, "—")} m`);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio Ne", `${safeText(data.designLoadSLE, "—")} kN`);
-  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Coeff. prova", `${safeText(data.testFactor || "1.20", "—")}`);
+  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Coeff. prova", `${safeText(data.testFactor || "1.50", "—")}`);
   ly += h;
 
-  drawCompactCell(pdf, leftX, ly, w4, h, "Carico massimo prova", `${safeText(data.testLoad, "—")} kN`);
+  drawCompactCell(pdf, leftX, ly, w4, h, "Carico massimo prova", `${safeText(data.testLoad || (Number(data.designLoadSLE || 0) * Number(data.testFactor || 1.5)), "—")} kN`);
   drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", data.jackId);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Comparatori", data.comparatorId);
   ly += h;
 
-  drawCompactCell(pdf, leftX, ly, w3, h, "Coeff. taratura", `${safeText(data.calibrationCoeff, "—")} kN/bar`);
-  drawCompactCell(pdf, leftX + w3, ly, w3 * 2, h, "Formula bar automatici", "bar = kN / coeff. taratura");
+  drawCompactCell(pdf, leftX, ly, w3, h, "Martinetto fisso", "30 ton");
+  drawCompactCell(pdf, leftX + w3, ly, w3, h, "Rif. calcolo", `${safeText(result.pressureReferenceLoadKn, "294,30")} kN / 700 bar`);
+  drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Formula pressione", "bar = kN step x 700 / 294,30");
   ly += h + 2;
 
   ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
@@ -337,7 +321,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(20, 20, 20);
 
   let tx = leftX;
-  ["N", "Ciclo", "%", "Bar auto", "Carico [kN]", "Teor. rif. [kN]", "Ced. medio"].forEach((head, i) => {
+  ["N", "Ciclo", "%", "Press. [bar]", "Calc. [kN]", "Rif. mart. [kN]", "Ced. medio"].forEach((head, i) => {
     pdf.text(head, tx + 1.1, ly + 3.7);
     tx += colW[i];
   });
@@ -352,7 +336,7 @@ export async function exportReport({ data, result, photo = null, preview = false
     pdf.rect(leftX, ly, leftW, rowH);
 
     tx = leftX;
-    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.targetLoad, 2), fmt(r.reading, 3)].forEach((value, i) => {
+    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(result.pressureReferenceLoadKn, 2), fmt(r.reading, 3)].forEach((value, i) => {
       pdf.text(String(value), tx + 1.1, ly + 3.5, { maxWidth: colW[i] - 2.2 });
       tx += colW[i];
     });
@@ -397,29 +381,14 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   ry += photoH + 3;
 
-  const noteY = ry;
-  const noteSectionY = drawSection(pdf, rightX, noteY, rightW, "NOTE TECNICHE E RIFERIMENTI");
+  const chartY = Math.max(ly, ry) + 4;
 
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.2);
-  pdf.setTextColor(0, 0, 0);
-
-  let noteBottomY = addWrapped(pdf, data.note || "Nessuna nota inserita.", rightX + 2, noteSectionY, rightW - 4, 2.4);
-  noteBottomY = addWrapped(pdf, "Bar calcolati automaticamente dal software: pressione richiesta [bar] = carico del gradino [kN] / coefficiente di taratura [kN/bar]. Il perito inserisce solo le letture dei tre comparatori.", rightX + 2, noteBottomY + 1.2, rightW - 4, 2.4);
-  noteBottomY += 1.2;
-
-  pdf.setFont("helvetica", "italic");
-  pdf.setFontSize(4.8);
-  noteBottomY = addWrapped(pdf, NORME.dichiarazione, rightX + 2, noteBottomY, rightW - 4, 2.2);
-
-  const chartY = ly + 4;
-
-  drawSection(pdf, leftX, chartY, leftW, "CURVA UNICA CARICO - SPOSTAMENTO");
+  drawSection(pdf, ML, chartY, CW, "CURVA CARICO CALCOLATO - SPOSTAMENTO");
 
   const chartH = 66;
-  drawPdfChart(pdf, rows, leftX, chartY + 5.5, leftW, chartH);
+  drawPdfChart(pdf, rows, ML, chartY + 5.5, CW, chartH);
 
-  const bottomY = Math.max(chartY + 5.5 + chartH, noteBottomY) + 4;
+  const bottomY = chartY + 5.5 + chartH + 4;
 
   const esitoW = 66;
   const firmaW = CW - esitoW - 5;
@@ -467,6 +436,39 @@ export async function exportReport({ data, result, photo = null, preview = false
     pdf.line(firmaX + 2, fy + 19, firmaX + firmaW - 4, fy + 19);
     pdf.text("Firma", firmaX + 2, fy + 23);
   }
+
+  const noteY = bottomY + 32;
+
+  const noteStartY = drawSection(pdf, ML, noteY, CW, "NOTE TECNICHE E RIFERIMENTI");
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(5.2);
+  pdf.setTextColor(0, 0, 0);
+
+  let ny = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteStartY, CW - 4, 2.4);
+  ny = addWrapped(pdf, "I kN dei gradini sono calcolati automaticamente dal carico di esercizio/SLE. La pressione e calcolata automaticamente con la proporzione del martinetto: bar massimi : kN martinetto = bar step : kN step. Se il carico del martinetto e inserito in tonnellate, l app lo converte in kN. Il tecnico inserisce solo le letture dei 3 comparatori.", ML + 2, ny + 1.2, CW - 4, 2.4);
+  ny += 1.2;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.text("Riferimenti normativi:", ML + 2, ny);
+  ny += 2.7;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.text(`${NORME.uni}`, ML + 2, ny, { maxWidth: CW - 4 });
+  ny += 2.7;
+
+  pdf.text(`${NORME.dm}`, ML + 2, ny, { maxWidth: CW - 4 });
+  ny += 2.7;
+
+  pdf.text("D.M. 17/01/2018 (NTC 2018)", ML + 2, ny, { maxWidth: CW - 4 });
+  ny += 2.7;
+
+  pdf.text("Circolare C.S.LL.PP. n. 7/2019", ML + 2, ny, { maxWidth: CW - 4 });
+  ny += 3.2;
+
+  pdf.setFont("helvetica", "italic");
+  pdf.setFontSize(4.8);
+  addWrapped(pdf, NORME.dichiarazione, ML + 2, ny, CW - 4, 2.2);
 
   drawFooter(pdf, ML, PW, PH);
 

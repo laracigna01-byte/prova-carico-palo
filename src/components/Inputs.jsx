@@ -1,10 +1,10 @@
 import { T } from "../config/theme";
 
-export function TextInput({ label, value, onChange, placeholder, type = "text", min, max, step }) {
+export function TextInput({ label, value, onChange, placeholder, type = "text", min, max, step, readOnly = false }) {
   return (
     <div className="field">
       <label>{label}</label>
-      <input type={type} value={value} min={min} max={max} step={step} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
+      <input type={type} value={value} min={min} max={max} step={step} placeholder={placeholder || ""} readOnly={readOnly} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
@@ -13,11 +13,11 @@ export function NumberInput(props) {
   return <TextInput {...props} type="number" step={props.step || "any"} />;
 }
 
-export function TextArea({ label, value, onChange, placeholder }) {
+export function TextArea({ label, value, onChange, placeholder, readOnly = false }) {
   return (
     <div className="field wide">
       <label>{label}</label>
-      <textarea value={value} placeholder={placeholder || ""} onChange={(e) => onChange(e.target.value)} />
+      <textarea value={value} placeholder={placeholder || ""} readOnly={readOnly} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }

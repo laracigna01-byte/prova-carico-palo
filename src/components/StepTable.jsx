@@ -3,7 +3,7 @@ import { fmt } from "../utils/formatters";
 
 const keys = ["c1", "c2", "c3"];
 
-export function StepTable({ step, load, targetLoad, pressure, onPressureChange, value = {}, onChange, color }) {
+export function StepTable({ step, load, targetLoad, pressure, value = {}, onChange, color }) {
   const readings = Array.isArray(value) ? Object.fromEntries(keys.map((k, i) => [k, value[i] ?? ""])) : { c1: "", c2: "", c3: "", ...(value || {}) };
   const nums = keys.map((k) => Number(String(readings[k] || "").replace(",", "."))).filter(Number.isFinite);
   const mean = nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
@@ -14,15 +14,15 @@ export function StepTable({ step, load, targetLoad, pressure, onPressureChange, 
     <div className={`step-table ${step.unload ? "is-unload" : ""}`} style={{ borderColor: step.unload ? T.accentOrange : T.border }}>
       <div className="step-head">
         <div>
-          <b style={{ color }}>{fmt(load, 2)} kN calcolati</b>
+          <b style={{ color }}>{fmt(load, 2)} kN</b>
           <span>{step.cycleLabel} · {step.label}</span>
-          <small className="target-load">bar automatici da kN / coeff. taratura · riferimento {fmt(targetLoad, 2)} kN</small>
+          <small className="target-load">carico automatico da {step.percent}% del carico di esercizio/SLE</small>
         </div>
         <div className="step-status"><mark className={nums.length >= 3 ? "ok" : "pending"}>{nums.length >= 3 ? "LETTURE OK" : "COMPILARE"}</mark></div>
       </div>
       <div className="pressure-row auto-pressure">
         <label>Pressione automatica [bar]</label>
-        <div className="auto-pressure-value">{pressure === null || pressure === undefined ? "Coeff. taratura mancante" : `${fmt(pressure, 2)} bar`}</div>
+        <output>{pressure === null ? "—" : `${fmt(pressure, 2)} bar`}</output>
       </div>
       <div className="step-grid pile-readings">
         {keys.map((key, index) => (

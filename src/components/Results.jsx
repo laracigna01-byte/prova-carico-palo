@@ -6,7 +6,7 @@ import { fmt } from "../utils/formatters";
 function Tip({ active, payload }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
-  return <div className="tip"><b>{p.name}</b><br />Bar automatici {fmt(p.pressure, 2)}<br />Cedimento {fmt(p.x, 3)} mm<br />Carico {fmt(p.y, 2)} kN</div>;
+  return <div className="tip"><b>{p.name}</b><br />Pressione {fmt(p.pressure, 2)} bar<br />Cedimento {fmt(p.x, 3)} mm<br />Carico {fmt(p.y, 2)} kN</div>;
 }
 
 export function LoadDisplacementChart({ result }) {
@@ -33,7 +33,7 @@ export function Results({ result, data, setData, chartRef }) {
         <ResultCard label="Gradini compilati" value={result.measuredCount} unit="/17" color={T.accentBlue} sub="carico e scarico" />
         <ResultCard label="Cedimento a 150%" value={fmt(result.maxDisplacement, 3)} unit="mm" color={T.cycle1} sub="cedimento medio" />
         <ResultCard label="Residuo allo scarico" value={fmt(result.residual, 3)} unit="mm" color={T.accentOrange} sub="cedimento medio" />
-        <ResultCard label="Coeff. taratura" value={fmt(data.calibrationCoeff, 3)} unit="kN/bar" color={T.accentYellow} sub="da certificato martinetto" />
+        <ResultCard label="Martinetto fisso" value="30" unit="ton" color={T.accentYellow} sub={`700 bar · ${fmt(result.pressureReferenceLoadKn, 2)} kN`} />
         <ResultCard label="Esito dichiarato" value={data.outcome || "—"} unit="" color={data.outcome === "Negativo" ? T.accentRed : T.accent} sub="scelto dal tecnico" />
       </div>
 
@@ -48,7 +48,7 @@ export function Results({ result, data, setData, chartRef }) {
       </div>
 
       <div className="chart-box" ref={chartRef}>
-        <div className="chart-title"><b>Grafico unico carico / cedimento</b><span>Asse X = cedimento medio dei 3 comparatori, asse Y = carico applicato automatico in kN</span></div>
+        <div className="chart-title"><b>Grafico carico / cedimento</b><span>Asse X = cedimento medio dei 3 comparatori, asse Y = carico del gradino calcolato in automatico</span></div>
         {result.chartAll?.length ? <div className="chart"><LoadDisplacementChart result={result} /></div> : <div className="empty">Inserisci le letture per generare il grafico.</div>}
       </div>
 
@@ -56,13 +56,13 @@ export function Results({ result, data, setData, chartRef }) {
         <div className="table-title">Tabella percentuali e letture</div>
         <div className="scroll">
           <table>
-            <thead><tr><th>N.</th><th>Ciclo</th><th>%</th><th>Bar automatici</th><th>Carico kN</th><th>Rif. teorico kN</th><th>Cedimento medio mm</th></tr></thead>
-            <tbody>{result.rows.map((r) => <tr key={r.key} className={r.unload ? "unload" : ""}><td>{r.stepNo}</td><td>{r.cycleLabel}</td><td>{r.label}</td><td>{fmt(r.pressure, 2)}</td><td>{fmt(r.load, 2)}</td><td>{fmt(r.targetLoad, 2)}</td><td>{fmt(r.reading, 3)}</td></tr>)}</tbody>
+            <thead><tr><th>N.</th><th>Ciclo</th><th>%</th><th>Pressione auto bar</th><th>Carico kN</th><th>Martinetto fisso</th><th>Cedimento medio mm</th></tr></thead>
+            <tbody>{result.rows.map((r) => <tr key={r.key} className={r.unload ? "unload" : ""}><td>{r.stepNo}</td><td>{r.cycleLabel}</td><td>{r.label}</td><td>{fmt(r.pressure, 2)}</td><td>{fmt(r.load, 2)}</td><td>{fmt(result.pressureReferenceLoadKn, 2)}</td><td>{fmt(r.reading, 3)}</td></tr>)}</tbody>
           </table>
         </div>
       </div>
 
-      <div className="note"><b>Nota tecnica:</b> il tecnico inserisce carico di esercizio e coefficiente di taratura. L’app calcola automaticamente kN e bar di ogni gradino con: bar = kN / coefficiente di taratura [kN/bar]. Il perito compila solo i tre comparatori.</div>
+      <div className="note"><b>Nota tecnica:</b> l’app usa martinetto fisso 30 ton (= 294,30 kN) e manometro fisso 700 bar. I bar vengono calcolati con la proporzione: bar step = kN step × 700 / 294,30. Il tecnico inserisce solo le letture dei 3 comparatori.</div>
     </div>
   );
 }
