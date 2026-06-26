@@ -40,7 +40,7 @@ export const DEFAULT_PROJECT = {
   direzioneLavori: "",
   impresa: "",
   progettista: "",
-  tecnico: "",
+  tecnico: "Giuseppe Li Calzi",
   presenti: "",
   pileId: "P-01",
   pileType: "Trivellato",
