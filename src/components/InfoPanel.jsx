@@ -56,7 +56,7 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
 />
 
 <NumberInput
-  label="Coefficiente prova"
+  label="Coeff. collaudo automatico"
   value={data.testFactor || 1}
   onChange={(value) =>
     setData((prev) => {
@@ -72,7 +72,7 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
 />
 
 <NumberInput
-  label="Carico massimo prova (kN)"
+  label="Carico max collaudo 150% (kN)"
   value={data.testLoad}
   readOnly
 />
@@ -83,7 +83,7 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
             <TextInput label="Martinetto" value={data.jackId} onChange={upd("jackId")} />
             <TextInput label="Manometro / cella" value={data.manometerId} onChange={upd("manometerId")} />
             <TextInput label="Comparatori" value={data.comparatorId} onChange={upd("comparatorId")} />
-            <NumberInput label="Coeff. taratura (kN/bar)" value={data.calibrationCoeff || ""} onChange={upd("calibrationCoeff")} placeholder="da certificato ACCREDIA" />
+            <NumberInput label="Coeff. taratura (kN/bar)" value={data.calibrationCoeff || ""} onChange={upd("calibrationCoeff")} placeholder="es. 4,00 kN/bar" />
             <TextInput label="Presenti" value={data.presenti} onChange={upd("presenti")} />
           </div>
 

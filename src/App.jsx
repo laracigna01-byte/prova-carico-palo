@@ -33,11 +33,11 @@ export default function App() {
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const result = useMemo(() => calcPalo({ readings, pressures, loadSteps: LOAD_STEPS, testLoad: data.testLoad, calibrationCoeff: data.calibrationCoeff }), [readings, pressures, data.testLoad, data.calibrationCoeff]);
+  const result = useMemo(() => calcPalo({ readings, loadSteps: LOAD_STEPS, designLoadSLE: data.designLoadSLE, calibrationCoeff: data.calibrationCoeff }), [readings, data.designLoadSLE, data.calibrationCoeff]);
   const errors = useMemo(() => validateTest({ data, result, photo }), [data, result, photo]);
 
   const setReading = (key, value) => setReadings((prev) => ({ ...prev, [key]: value }));
-  const setPressure = (key, value) => setPressures((prev) => ({ ...prev, [key]: value }));
+  // Pressioni/bar calcolati automaticamente: il perito inserisce solo i 3 comparatori.
 
   function newTest() {
     if (!window.confirm("Creare una nuova prova? I dati non salvati verranno persi.")) return;
@@ -77,7 +77,7 @@ export default function App() {
   }
 
   function exportRecord(record) {
-    const recResult = calcPalo({ readings: record.readings, pressures: record.pressures, loadSteps: LOAD_STEPS, testLoad: record.data.testLoad, calibrationCoeff: record.data.calibrationCoeff });
+    const recResult = calcPalo({ readings: record.readings, loadSteps: LOAD_STEPS, designLoadSLE: record.data.designLoadSLE, calibrationCoeff: record.data.calibrationCoeff });
     exportReport({ data: record.data, result: recResult, photo: record.photo, chartNode: null });
   }
 
@@ -102,7 +102,7 @@ export default function App() {
       <section className="workbench">
         <div className="left-col">
           <SectionHeader label="Tabella prova - 3 comparatori" step="1" color={T.accentBlue} />
-          <p className="hint">Per ogni gradino inserisci la pressione letta al manometro [bar] e le letture dei 3 comparatori. Il carico applicato in kN viene calcolato dall’app con il coefficiente di taratura del martinetto.</p>
+          <p className="hint">L’app genera automaticamente kN e bar per ogni gradino. Il perito inserisce solo le letture dei 3 comparatori.</p>
           <div className="steps one-col">
             {result.rows.map((row, index) => (
               <StepTable
@@ -110,8 +110,8 @@ export default function App() {
                 step={row}
                 load={row.load}
                 targetLoad={row.targetLoad}
-                pressure={pressures[row.key]}
-                onPressureChange={(value) => setPressure(row.key, value)}
+                pressure={row.pressure}
+                onPressureChange={() => {}}
                 value={readings[row.key]}
                 onChange={(value) => setReading(row.key, value)}
                 color={row.unload ? T.accentOrange : row.cycle === "esercizio" ? T.cycle1 : row.unload ? T.accentOrange : T.cycle2}

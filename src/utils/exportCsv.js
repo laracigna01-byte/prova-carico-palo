@@ -15,7 +15,7 @@ export function exportCsv({ data, result }) {
     ["Committente", data.committente, "Cantiere", data.cantiere, "Localita", data.localita],
     ["Ne kN", data.designLoadSLE, "Nc kN", data.testLoad, "Lunghezza m", data.length, "Coeff. taratura kN/bar", data.calibrationCoeff],
     [],
-    ["N", "Ciclo", "Percentuale", "Pressione bar", "Carico calcolato kN", "Carico teorico riferimento kN", "Cedimento medio mm", "Comparatore 1", "Comparatore 2", "Comparatore 3"],
+    ["N", "Ciclo", "Percentuale", "Bar automatici", "Carico kN", "Carico teorico riferimento kN", "Cedimento medio mm", "Comparatore 1", "Comparatore 2", "Comparatore 3"],
     ...result.rows.map((r) => [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.targetLoad, 2), fmt(r.reading, 3), fmt(r.readings?.c1, 3), fmt(r.readings?.c2, 3), fmt(r.readings?.c3, 3)]),
     [],
     ["Esito", data.outcome],

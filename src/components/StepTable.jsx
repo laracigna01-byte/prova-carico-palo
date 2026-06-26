@@ -16,13 +16,13 @@ export function StepTable({ step, load, targetLoad, pressure, onPressureChange, 
         <div>
           <b style={{ color }}>{fmt(load, 2)} kN calcolati</b>
           <span>{step.cycleLabel} · {step.label}</span>
-          <small className="target-load">riferimento teorico {fmt(targetLoad, 2)} kN</small>
+          <small className="target-load">bar automatici da kN / coeff. taratura · riferimento {fmt(targetLoad, 2)} kN</small>
         </div>
         <div className="step-status"><mark className={nums.length >= 3 ? "ok" : "pending"}>{nums.length >= 3 ? "LETTURE OK" : "COMPILARE"}</mark></div>
       </div>
-      <div className="pressure-row">
-        <label>Pressione letta [bar] *</label>
-        <input type="number" inputMode="decimal" step="0.01" min="0" value={pressure || ""} onChange={(e) => onPressureChange(e.target.value)} placeholder="bar" />
+      <div className="pressure-row auto-pressure">
+        <label>Pressione automatica [bar]</label>
+        <div className="auto-pressure-value">{pressure === null || pressure === undefined ? "Coeff. taratura mancante" : `${fmt(pressure, 2)} bar`}</div>
       </div>
       <div className="step-grid pile-readings">
         {keys.map((key, index) => (

@@ -108,7 +108,7 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(5.8);
   pdf.setTextColor(20, 20, 20);
-  pdf.text("Curva carico applicato - cedimento", x + 2, y + 4);
+  pdf.text("Curva unica carico - cedimento", x + 2, y + 4);
 
   const validPoints = rows
     .filter((r) => Number.isFinite(Number(r.reading)) && Number.isFinite(Number(r.load)))
@@ -156,7 +156,7 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
   pdf.setFontSize(4.7);
   pdf.setTextColor(70, 70, 70);
   pdf.text("Cedimento [mm]", plotX + plotW / 2, y + h - 3.2, { align: "center" });
-  pdf.text("Carico calcolato [kN]", x + 4.4, plotY + plotH / 2, { angle: 90 });
+  pdf.text("Carico [kN]", x + 4.4, plotY + plotH / 2, { angle: 90 });
 
   pdf.setDrawColor(52, 107, 180);
   pdf.setFillColor(52, 107, 180);
@@ -302,7 +302,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   ly += h;
 
   drawCompactCell(pdf, leftX, ly, w3, h, "Coeff. taratura", `${safeText(data.calibrationCoeff, "—")} kN/bar`);
-  drawCompactCell(pdf, leftX + w3, ly, w3 * 2, h, "Formula carico applicato", "kN = bar x coeff. taratura");
+  drawCompactCell(pdf, leftX + w3, ly, w3 * 2, h, "Formula bar automatici", "bar = kN / coeff. taratura");
   ly += h + 2;
 
   ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
@@ -320,7 +320,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(20, 20, 20);
 
   let tx = leftX;
-  ["N", "Ciclo", "%", "Press. [bar]", "Calc. [kN]", "Teor. rif. [kN]", "Ced. medio"].forEach((head, i) => {
+  ["N", "Ciclo", "%", "Bar auto", "Carico [kN]", "Teor. rif. [kN]", "Ced. medio"].forEach((head, i) => {
     pdf.text(head, tx + 1.1, ly + 3.7);
     tx += colW[i];
   });
@@ -382,7 +382,7 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   const chartY = Math.max(ly, ry) + 4;
 
-  drawSection(pdf, ML, chartY, CW, "CURVA CARICO CALCOLATO - SPOSTAMENTO");
+  drawSection(pdf, ML, chartY, CW, "CURVA UNICA CARICO - SPOSTAMENTO");
 
   const chartH = 66;
   drawPdfChart(pdf, rows, ML, chartY + 5.5, CW, chartH);
@@ -445,7 +445,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(0, 0, 0);
 
   let ny = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteStartY, CW - 4, 2.4);
-  ny = addWrapped(pdf, "Pressione bar inserita dal tecnico dalla lettura del manometro. Carico applicato [kN] = pressione [bar] x coefficiente di taratura [kN/bar] del martinetto.", ML + 2, ny + 1.2, CW - 4, 2.4);
+  ny = addWrapped(pdf, "Bar calcolati automaticamente dal software: pressione richiesta [bar] = carico del gradino [kN] / coefficiente di taratura [kN/bar]. Il perito inserisce solo le letture dei tre comparatori.", ML + 2, ny + 1.2, CW - 4, 2.4);
   ny += 1.2;
 
   pdf.setFont("helvetica", "bold");

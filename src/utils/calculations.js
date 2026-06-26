@@ -21,23 +21,38 @@ function stats(readings) {
   return { mean, max, min, count: values.length, delta: round(max - min, 3) };
 }
 
-export function buildRows({ readings, pressures, loadSteps, testLoad, calibrationCoeff }) {
-  const Nc = toNumber(testLoad, 0);
+export function buildRows({ readings, loadSteps, designLoadSLE, calibrationCoeff }) {
+  const exerciseLoad = toNumber(designLoadSLE, 0);
   const coeff = toNumber(calibrationCoeff, null);
+
   return loadSteps.map((step, index) => {
     const stepReadings = normalizeReadings(readings?.[step.key]);
     const s = stats(stepReadings);
-    const targetLoad = round(Nc * step.factor, 2);
-    const pressure = toNumber(pressures?.[step.key], null);
-    const measuredLoad = coeff !== null && pressure !== null ? round(pressure * coeff, 2) : null;
-    const load = measuredLoad ?? targetLoad;
-    return { ...step, stepNo: index + 1, readings: stepReadings, reading: s.mean, meanSettlement: s.mean, maxSettlement: s.max, minSettlement: s.min, comparatorDelta: s.delta, measuredCount: s.count, targetLoad, pressure, measuredLoad, load };
+    const targetLoad = round(exerciseLoad * step.factor, 2);
+    const pressure = coeff && coeff > 0 ? round(targetLoad / coeff, 2) : null;
+    const load = targetLoad;
+
+    return {
+      ...step,
+      stepNo: index + 1,
+      readings: stepReadings,
+      reading: s.mean,
+      meanSettlement: s.mean,
+      maxSettlement: s.max,
+      minSettlement: s.min,
+      comparatorDelta: s.delta,
+      measuredCount: s.count,
+      targetLoad,
+      pressure,
+      measuredLoad: load,
+      load,
+    };
   });
 }
 
 
-export function calcPalo({ readings, pressures, loadSteps, testLoad, calibrationCoeff }) {
-  const rows = buildRows({ readings, pressures, loadSteps, testLoad, calibrationCoeff });
+export function calcPalo({ readings, loadSteps, designLoadSLE, calibrationCoeff }) {
+  const rows = buildRows({ readings, loadSteps, designLoadSLE, calibrationCoeff });
   const max = rows.find((r) => r.isMax) || rows.find((r) => r.key === "co150") || null;
   const exerciseMax = rows.find((r) => r.isExerciseMax) || rows.find((r) => r.key === "es100") || null;
   const unload = rows.find((r) => r.isResidual) || rows.filter((r) => r.unload).at(-1) || null;
@@ -52,7 +67,7 @@ export function calcPalo({ readings, pressures, loadSteps, testLoad, calibration
   const chartCollaudo = rows.filter((r) => r.cycle === "collaudo" && !r.unload && r.meanSettlement !== null && Number.isFinite(Number(r.load))).map(chartPoint);
   const chartUnload = rows.filter((r) => r.cycle === "collaudo" && r.unload && r.meanSettlement !== null && Number.isFinite(Number(r.load))).map(chartPoint);
   const chartLoad = rows.filter((r) => !r.unload && r.meanSettlement !== null && Number.isFinite(Number(r.load))).map(chartPoint);
-  return { rows, max, exerciseMax, unload, exerciseResidual, measuredCount, maxDisplacement, exerciseDisplacement, residual, elasticRecovery, chartExercise, chartCollaudo, chartLoad, chartUnload, chartAll: [...chartExercise, ...chartCollaudo, ...chartUnload], formula: "Carico applicato [kN] = pressione [bar] x coefficiente di taratura [kN/bar]. Cedimento medio = media dei 3 comparatori compilati." };
+  return { rows, max, exerciseMax, unload, exerciseResidual, measuredCount, maxDisplacement, exerciseDisplacement, residual, elasticRecovery, chartExercise, chartCollaudo, chartLoad, chartUnload, chartAll: [...chartExercise, ...chartCollaudo, ...chartUnload], formula: "Pressione richiesta [bar] = carico del gradino [kN] / coefficiente di taratura [kN/bar]. Cedimento medio = media dei 3 comparatori compilati." };
 }
 
 export function validateTest({ data, result, photo }) {
@@ -60,9 +75,7 @@ export function validateTest({ data, result, photo }) {
   if (!data.pileId) errors.push("Identificativo palo mancante");
   if (!data.designLoadSLE) errors.push("Carico di progetto/SLE mancante");
   if (!data.testLoad) errors.push("Carico massimo di prova mancante");
-  if (!data.calibrationCoeff) errors.push("Coeff. taratura martinetto/cella mancante");
-  const rowsWithReadings = result.rows.filter((r) => r.measuredCount > 0);
-  if (rowsWithReadings.some((r) => r.pressure === null)) errors.push("Inserire la pressione [bar] per i gradini compilati");
+  if (!data.calibrationCoeff) errors.push("Coeff. taratura martinetto/cella mancante: serve per calcolare automaticamente i bar");
   if (result.measuredCount === 0) errors.push("Inserire almeno una lettura dei comparatori");
   if (!photo) errors.push("Foto/schema della prova mancante");
   if (!data.tecnico) errors.push("Tecnico esecutore mancante");
