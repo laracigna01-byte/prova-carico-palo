@@ -66,6 +66,27 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.text(safeText(value, "—"), x + 1, y + 5.1, { maxWidth: w - 2 });
 }
 
+function drawWrappedCell(pdf, x, y, w, label, value, options = {}) {
+  const lineHeight = options.lineHeight || 2.7;
+  const lines = pdf.splitTextToSize(safeText(value, "—"), w - 2);
+  const height = 5.1 + lines.length * lineHeight + 1;
+
+  pdf.setDrawColor(185, 185, 185);
+  pdf.rect(x, y, w, height);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(4.5);
+  pdf.setTextColor(90, 90, 90);
+  pdf.text(label, x + 1, y + 2.3);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(5.4);
+  pdf.setTextColor(10, 10, 10);
+  pdf.text(lines, x + 1, y + 5.1, { maxWidth: w - 2 });
+
+  return y + height;
+}
+
 function addContainedImage(pdf, dataUrl, type, boxX, boxY, boxW, boxH) {
   const props = pdf.getImageProperties(dataUrl);
   const imgRatio = props.width / props.height;
@@ -282,6 +303,9 @@ export async function exportReport({ data, result, photo = null, preview = false
   drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Località", data.localita);
   ly += h;
 
+  ly = drawWrappedCell(pdf, leftX, ly, leftW, "Oggetto", data.oggetto);
+  ly += 2;
+
   drawCompactCell(pdf, leftX, ly, w3, h, "Direzione lavori", data.direzioneLavori);
   drawCompactCell(pdf, leftX + w3, ly, w3, h, "Impresa", data.impresa);
   drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Riferimento prova", data.reportId || data.pileId);
@@ -380,7 +404,39 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   ry += photoH + 3;
 
-  const chartY = Math.max(ly, ry) + 4;
+  const noteY = ry;
+  const noteSectionY = drawSection(pdf, ML, noteY, CW, "NOTE TECNICHE E RIFERIMENTI");
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(5.2);
+  pdf.setTextColor(0, 0, 0);
+
+  let noteBottomY = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteSectionY, CW - 4, 2.4);
+  noteBottomY = addWrapped(pdf, "Bar calcolati automaticamente dal software: pressione richiesta [bar] = carico del gradino [kN] / coefficiente di taratura [kN/bar]. Il perito inserisce solo le letture dei tre comparatori.", ML + 2, noteBottomY + 1.2, CW - 4, 2.4);
+  noteBottomY += 1.2;
+
+  pdf.setFont("helvetica", "bold");
+  pdf.text("Riferimenti normativi:", ML + 2, noteBottomY);
+  noteBottomY += 2.7;
+
+  pdf.setFont("helvetica", "normal");
+  pdf.text(`${NORME.uni}`, ML + 2, noteBottomY, { maxWidth: CW - 4 });
+  noteBottomY += 2.7;
+
+  pdf.text(`${NORME.dm}`, ML + 2, noteBottomY, { maxWidth: CW - 4 });
+  noteBottomY += 2.7;
+
+  pdf.text("D.M. 17/01/2018 (NTC 2018)", ML + 2, noteBottomY, { maxWidth: CW - 4 });
+  noteBottomY += 2.7;
+
+  pdf.text("Circolare C.S.LL.PP. n. 7/2019", ML + 2, noteBottomY, { maxWidth: CW - 4 });
+  noteBottomY += 3.2;
+
+  pdf.setFont("helvetica", "italic");
+  pdf.setFontSize(4.8);
+  noteBottomY = addWrapped(pdf, NORME.dichiarazione, ML + 2, noteBottomY, CW - 4, 2.2);
+
+  const chartY = Math.max(ly, noteBottomY) + 4;
 
   drawSection(pdf, ML, chartY, CW, "CURVA UNICA CARICO - SPOSTAMENTO");
 
@@ -435,39 +491,6 @@ export async function exportReport({ data, result, photo = null, preview = false
     pdf.line(firmaX + 2, fy + 19, firmaX + firmaW - 4, fy + 19);
     pdf.text("Firma", firmaX + 2, fy + 23);
   }
-
-  const noteY = bottomY + 32;
-
-  const noteStartY = drawSection(pdf, ML, noteY, CW, "NOTE TECNICHE E RIFERIMENTI");
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.2);
-  pdf.setTextColor(0, 0, 0);
-
-  let ny = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteStartY, CW - 4, 2.4);
-  ny = addWrapped(pdf, "Bar calcolati automaticamente dal software: pressione richiesta [bar] = carico del gradino [kN] / coefficiente di taratura [kN/bar]. Il perito inserisce solo le letture dei tre comparatori.", ML + 2, ny + 1.2, CW - 4, 2.4);
-  ny += 1.2;
-
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Riferimenti normativi:", ML + 2, ny);
-  ny += 2.7;
-
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`${NORME.uni}`, ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 2.7;
-
-  pdf.text(`${NORME.dm}`, ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 2.7;
-
-  pdf.text("D.M. 17/01/2018 (NTC 2018)", ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 2.7;
-
-  pdf.text("Circolare C.S.LL.PP. n. 7/2019", ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 3.2;
-
-  pdf.setFont("helvetica", "italic");
-  pdf.setFontSize(4.8);
-  addWrapped(pdf, NORME.dichiarazione, ML + 2, ny, CW - 4, 2.2);
 
   drawFooter(pdf, ML, PW, PH);
 

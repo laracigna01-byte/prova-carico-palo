@@ -31,6 +31,7 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
             <TextInput label="Impresa" value={data.impresa} onChange={upd("impresa")} />
             <TextInput label="Tecnico esecutore" value={data.tecnico} onChange={upd("tecnico")} />
           </div>
+          <TextArea label="Oggetto" value={data.oggetto} onChange={upd("oggetto")} placeholder="Oggetto della prova" />
 
           <SectionHeader label="Dati palo" step="B" color={T.accentOrange} />
           <div className="grid small">
