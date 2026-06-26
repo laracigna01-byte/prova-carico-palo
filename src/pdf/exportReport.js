@@ -116,7 +116,6 @@ function drawFooter(pdf, ML, PW, PH) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(5.2);
   pdf.setTextColor(100, 100, 100);
-  pdf.text(`Minuta di prova - ${NORME.uni} - ${NORME.dm}`, ML, PH - 4);
   pdf.text("Pagina 1/1", PW - ML, PH - 4, { align: "right" });
 }
 
@@ -190,10 +189,7 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
 
     if (prev) pdf.line(prev.x, prev.y, px, py);
 
-    pdf.circle(px, py, 1, "F");
-    pdf.setFontSize(3.7);
-    pdf.text(String(p.label), px + 1.2, py - 1.5);
-
+    pdf.circle(px, py, 1.2, "F");
     prev = { x: px, y: py };
   });
 
@@ -207,15 +203,12 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
 
     if (prev) pdf.line(prev.x, prev.y, px, py);
 
-    pdf.circle(px, py, 1, "F");
-    pdf.setFontSize(3.7);
-    pdf.text(String(p.label).replace("Scarico ", "S"), px + 1.2, py - 1.5);
-
+    pdf.circle(px, py, 1.2, "F");
     prev = { x: px, y: py };
   });
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(4.6);
+  pdf.setFontSize(5.2);
   pdf.setTextColor(52, 107, 180);
   pdf.text("Carico", plotX + plotW - 18, plotY + 4);
   pdf.setTextColor(150, 80, 80);
@@ -243,7 +236,7 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   const logo = await imageToDataUrl("/logo-dismat.jpg").catch(() => null);
 
-  let y = 7;
+  let y = 5;
 
   if (logo) pdf.addImage(logo, "JPEG", ML, y, 15, 15);
 
@@ -405,45 +398,28 @@ export async function exportReport({ data, result, photo = null, preview = false
   ry += photoH + 3;
 
   const noteY = ry;
-  const noteSectionY = drawSection(pdf, ML, noteY, CW, "NOTE TECNICHE E RIFERIMENTI");
+  const noteSectionY = drawSection(pdf, rightX, noteY, rightW, "NOTE TECNICHE E RIFERIMENTI");
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(5.2);
   pdf.setTextColor(0, 0, 0);
 
-  let noteBottomY = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteSectionY, CW - 4, 2.4);
-  noteBottomY = addWrapped(pdf, "Bar calcolati automaticamente dal software: pressione richiesta [bar] = carico del gradino [kN] / coefficiente di taratura [kN/bar]. Il perito inserisce solo le letture dei tre comparatori.", ML + 2, noteBottomY + 1.2, CW - 4, 2.4);
+  let noteBottomY = addWrapped(pdf, data.note || "Nessuna nota inserita.", rightX + 2, noteSectionY, rightW - 4, 2.4);
+  noteBottomY = addWrapped(pdf, "Bar calcolati automaticamente dal software: pressione richiesta [bar] = carico del gradino [kN] / coefficiente di taratura [kN/bar]. Il perito inserisce solo le letture dei tre comparatori.", rightX + 2, noteBottomY + 1.2, rightW - 4, 2.4);
   noteBottomY += 1.2;
-
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Riferimenti normativi:", ML + 2, noteBottomY);
-  noteBottomY += 2.7;
-
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`${NORME.uni}`, ML + 2, noteBottomY, { maxWidth: CW - 4 });
-  noteBottomY += 2.7;
-
-  pdf.text(`${NORME.dm}`, ML + 2, noteBottomY, { maxWidth: CW - 4 });
-  noteBottomY += 2.7;
-
-  pdf.text("D.M. 17/01/2018 (NTC 2018)", ML + 2, noteBottomY, { maxWidth: CW - 4 });
-  noteBottomY += 2.7;
-
-  pdf.text("Circolare C.S.LL.PP. n. 7/2019", ML + 2, noteBottomY, { maxWidth: CW - 4 });
-  noteBottomY += 3.2;
 
   pdf.setFont("helvetica", "italic");
   pdf.setFontSize(4.8);
-  noteBottomY = addWrapped(pdf, NORME.dichiarazione, ML + 2, noteBottomY, CW - 4, 2.2);
+  noteBottomY = addWrapped(pdf, NORME.dichiarazione, rightX + 2, noteBottomY, rightW - 4, 2.2);
 
-  const chartY = Math.max(ly, noteBottomY) + 4;
+  const chartY = ly + 4;
 
-  drawSection(pdf, ML, chartY, CW, "CURVA UNICA CARICO - SPOSTAMENTO");
+  drawSection(pdf, leftX, chartY, leftW, "CURVA UNICA CARICO - SPOSTAMENTO");
 
   const chartH = 66;
-  drawPdfChart(pdf, rows, ML, chartY + 5.5, CW, chartH);
+  drawPdfChart(pdf, rows, leftX, chartY + 5.5, leftW, chartH);
 
-  const bottomY = chartY + 5.5 + chartH + 4;
+  const bottomY = Math.max(chartY + 5.5 + chartH, noteBottomY) + 4;
 
   const esitoW = 66;
   const firmaW = CW - esitoW - 5;
