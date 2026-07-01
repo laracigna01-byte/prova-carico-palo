@@ -204,7 +204,7 @@ export function Results({ result, data, setData, chartRef }) {
                 <th>%</th>
                 <th>Pressione bar</th>
                 <th>Carico kN</th>
-                <th>Portata martinetto kN</th>
+                
                 <th>Cedimento medio mm</th>
               </tr>
             </thead>
@@ -217,7 +217,7 @@ export function Results({ result, data, setData, chartRef }) {
                   <td>{r.label}</td>
                   <td>{fmt(r.pressure, 2)}</td>
                   <td>{fmt(r.load, 2)}</td>
-                  <td>{fmt(result.pressureReferenceLoadKn, 2)}</td>
+                  
                   <td>{fmt(r.reading, 3)}</td>
                 </tr>
               ))}
