@@ -1,140 +1,58 @@
 import { toNumber, round } from "./formatters";
 
+export const FIXED_JACK_TON = 30;
+export const FIXED_TON_TO_KN = 9.81;
+export const FIXED_JACK_KN = round(FIXED_JACK_TON * FIXED_TON_TO_KN, 2);
+export const FIXED_PRESSURE_BAR = 700;
+
 const COMPARATORS = ["c1", "c2", "c3"];
-const READINGS_PER_COMPARATOR = 9;
-const DEFAULT_TON_TO_KN = 9.81;
-const DEFAULT_PRESSURE_BAR = 700;
-
-const emptyReadings = () => Array(READINGS_PER_COMPARATOR).fill("");
-
-function normalizeComparatorList(value) {
-  if (Array.isArray(value)) {
-    return Array.from({ length: READINGS_PER_COMPARATOR }, (_, i) => value[i] ?? "");
-  }
-
-  if (value === null || value === undefined || value === "") {
-    return emptyReadings();
-  }
-
-  return [value, ...Array(READINGS_PER_COMPARATOR - 1).fill("")];
-}
 
 function normalizeReadings(value) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
-    return Object.fromEntries(
-      COMPARATORS.map((key) => [key, normalizeComparatorList(value[key])])
-    );
+    return Object.fromEntries(COMPARATORS.map((k) => [k, value[k] ?? ""]));
   }
-
   if (Array.isArray(value)) {
-    return Object.fromEntries(
-      COMPARATORS.map((key, index) => [key, normalizeComparatorList(value[index])])
-    );
+    return Object.fromEntries(COMPARATORS.map((k, i) => [k, value[i] ?? ""]));
   }
-
-  return {
-    c1: normalizeComparatorList(value),
-    c2: emptyReadings(),
-    c3: emptyReadings(),
-  };
+  return { c1: value ?? "", c2: "", c3: "" };
 }
 
-function calcComparator(values) {
-  const normalized = normalizeComparatorList(values);
-
-  const nums = normalized
-    .map((v) => toNumber(v, null))
-    .filter((v) => v !== null);
-
-  const count = nums.length;
-  const lastThree = nums.slice(-3);
-
-  const stable =
-    lastThree.length === 3 &&
-    Math.max(...lastThree) - Math.min(...lastThree) <= 0.02;
-
-  const value = stable
-    ? round(lastThree.reduce((sum, v) => sum + v, 0) / 3, 3)
-    : nums.length
-      ? round(nums[nums.length - 1], 3)
-      : null;
-
-  return {
-    values: normalized,
-    count,
-    complete: stable,
-    stable,
-    value,
-  };
-}
-function calcStepStats(readings) {
-  const comparatorStats = Object.fromEntries(
-    COMPARATORS.map((key) => [key, calcComparator(readings[key])])
-  );
-
-  const comparatorValues = Object.fromEntries(
-    COMPARATORS.map((key) => [key, comparatorStats[key].value])
-  );
-
-  const validValues = COMPARATORS
-    .map((key) => comparatorStats[key].value)
-    .filter((v) => v !== null);
-
-  const complete = COMPARATORS.every((key) => comparatorStats[key].complete);
-  const mean = complete && validValues.length === COMPARATORS.length
-    ? round(validValues.reduce((sum, v) => sum + v, 0) / validValues.length, 3)
-    : null;
-
-  const max = validValues.length ? round(Math.max(...validValues), 3) : null;
-  const min = validValues.length ? round(Math.min(...validValues), 3) : null;
-
-  return {
-    comparatorStats,
-    comparatorValues,
-    complete,
-    mean,
-    max,
-    min,
-    delta: max !== null && min !== null ? round(max - min, 3) : null,
-    measuredCount: COMPARATORS.reduce((sum, key) => sum + comparatorStats[key].count, 0),
-    completedComparators: COMPARATORS.filter((key) => comparatorStats[key].complete).length,
-  };
+export function loadToKn(value, unit = "kN", tonToKn = 9.81) {
+  const n = toNumber(value, null);
+  if (n === null) return null;
+  return unit === "ton" ? round(n * toNumber(tonToKn, 9.81), 2) : round(n, 2);
 }
 
-function resolveBaseLoad(exerciseLoad, testLoad) {
-  const ne = toNumber(exerciseLoad, 0);
-  const nc = toNumber(testLoad, 0);
-
-  if (ne > 0) return ne;
-  if (nc > 0) return round(nc / 1.5, 2);
-  return 0;
+function stats(readings) {
+  const values = COMPARATORS.map((k) => toNumber(readings[k], null)).filter((v) => v !== null);
+  if (!values.length) return { mean: null, max: null, min: null, count: 0, delta: null };
+  const mean = round(values.reduce((a, b) => a + b, 0) / values.length, 3);
+  const max = round(Math.max(...values), 3);
+  const min = round(Math.min(...values), 3);
+  return { mean, max, min, count: values.length, delta: round(max - min, 3) };
 }
 
-export function buildRows({ readings, loadSteps, exerciseLoad, testLoad, jackCapacityTon, pressureReferenceBar = DEFAULT_PRESSURE_BAR, tonToKn = DEFAULT_TON_TO_KN }) {
-  const baseLoad = resolveBaseLoad(exerciseLoad, testLoad);
-  const jackCapacityKn = round(toNumber(jackCapacityTon, 0) * toNumber(tonToKn, DEFAULT_TON_TO_KN), 2);
-  const referenceBar = toNumber(pressureReferenceBar, DEFAULT_PRESSURE_BAR);
+export function buildRows({ readings, loadSteps, testLoad }) {
+  const maxTestLoad = toNumber(testLoad, 0);
+  const referenceLoad = FIXED_JACK_KN;
+  const referenceBar = FIXED_PRESSURE_BAR;
 
   return loadSteps.map((step, index) => {
     const stepReadings = normalizeReadings(readings?.[step.key]);
-    const s = calcStepStats(stepReadings);
-    const targetLoad = round(baseLoad * step.factor, 2);
-    const pressure = jackCapacityKn > 0 ? round((targetLoad * referenceBar) / jackCapacityKn, 2) : null;
+    const s = stats(stepReadings);
+    const targetLoad = round(maxTestLoad * step.factor, 2);
+    const pressure = referenceLoad && referenceLoad > 0 && referenceBar !== null ? round((targetLoad * referenceBar) / referenceLoad, 2) : null;
 
     return {
       ...step,
       stepNo: index + 1,
       readings: stepReadings,
-      comparatorValues: s.comparatorValues,
-      comparatorStats: s.comparatorStats,
       reading: s.mean,
       meanSettlement: s.mean,
       maxSettlement: s.max,
       minSettlement: s.min,
       comparatorDelta: s.delta,
-      measuredCount: s.measuredCount,
-      completedComparators: s.completedComparators,
-      complete: s.complete,
+      measuredCount: s.count,
       targetLoad,
       pressure,
       measuredLoad: targetLoad,
@@ -143,58 +61,34 @@ export function buildRows({ readings, loadSteps, exerciseLoad, testLoad, jackCap
   });
 }
 
-export function calcPalo({ readings, loadSteps, exerciseLoad, testLoad, jackCapacityTon, pressureReferenceBar, tonToKn }) {
-  const baseLoad = resolveBaseLoad(exerciseLoad, testLoad);
-  const maxTestLoad = round(baseLoad * 1.5, 2);
-  const jackCapacityKn = round(toNumber(jackCapacityTon, 0) * toNumber(tonToKn, DEFAULT_TON_TO_KN), 2);
-  const referenceBar = toNumber(pressureReferenceBar, DEFAULT_PRESSURE_BAR);
-
-  const rows = buildRows({
-    readings,
-    loadSteps,
-    exerciseLoad,
-    testLoad,
-    jackCapacityTon,
-    pressureReferenceBar: referenceBar,
-    tonToKn,
-  });
-
-  const max = rows.find((r) => r.isMax) || rows.find((r) => r.key === "c150") || null;
-  const exerciseMax = rows.find((r) => r.isExerciseMax) || rows.find((r) => r.key === "e100") || null;
+export function calcPalo({ readings, loadSteps, testLoad }) {
+  const referenceLoadKn = FIXED_JACK_KN;
+  const rows = buildRows({ readings, loadSteps, testLoad });
+  const max = rows.find((r) => r.isMax) || rows.find((r) => r.key === "p100") || null;
+  const exerciseMax = max;
   const unload = rows.find((r) => r.isResidual) || rows.filter((r) => r.unload).at(-1) || null;
-  const exerciseResidual = rows.find((r) => r.isExerciseResidual) || rows.find((r) => r.key === "se0") || null;
-
-  const measuredCount = rows.filter((r) => r.meanSettlement !== null).length;
+  const exerciseResidual = null;
+  const measuredCount = rows.filter((r) => r.measuredCount > 0).length;
   const maxDisplacement = max?.meanSettlement ?? null;
   const exerciseDisplacement = exerciseMax?.meanSettlement ?? null;
   const residual = unload?.meanSettlement ?? null;
   const elasticRecovery = maxDisplacement !== null && residual !== null ? round(maxDisplacement - residual, 3) : null;
 
-  const chartPoint = (r, comparatorKey, comparatorLabel) => ({
-    x: r.comparatorValues?.[comparatorKey],
+  const chartPoint = (r) => ({
+    x: r.meanSettlement,
     y: r.load,
     pressure: r.pressure,
     targetLoad: r.targetLoad,
-    name: `${comparatorLabel} - ${r.cycleLabel} ${r.label}`,
+    name: `${r.cycleLabel} ${r.label}`,
     phase: r.phase,
     unload: r.unload,
     cycle: r.cycle,
-    comparator: comparatorKey,
   });
 
-  const buildComparatorSeries = (comparatorKey, comparatorLabel) => {
-    const points = rows
-      .filter((r) => r.comparatorValues?.[comparatorKey] !== null && Number.isFinite(Number(r.load)))
-      .map((r) => chartPoint(r, comparatorKey, comparatorLabel));
-
-    return points.length
-      ? [{ x: 0, y: 0, pressure: 0, targetLoad: 0, name: `${comparatorLabel} - Origine`, phase: "origine", unload: false, cycle: "origine", comparator: comparatorKey }, ...points]
-      : [];
-  };
-
-  const chartC1 = buildComparatorSeries("c1", "Comparatore 1");
-  const chartC2 = buildComparatorSeries("c2", "Comparatore 2");
-  const chartC3 = buildComparatorSeries("c3", "Comparatore 3");
+  const chartExercise = [];
+  const chartCollaudo = rows.filter((r) => !r.unload && r.meanSettlement !== null).map(chartPoint);
+  const chartUnload = rows.filter((r) => r.unload && r.meanSettlement !== null).map(chartPoint);
+  const chartLoad = rows.filter((r) => !r.unload && r.meanSettlement !== null).map(chartPoint);
 
   return {
     rows,
@@ -207,30 +101,27 @@ export function calcPalo({ readings, loadSteps, exerciseLoad, testLoad, jackCapa
     exerciseDisplacement,
     residual,
     elasticRecovery,
-    chartC1,
-    chartC2,
-    chartC3,
-    chartAll: [...chartC1, ...chartC2, ...chartC3],
-    pressureReferenceLoadKn: jackCapacityKn,
-    jackCapacityTon: toNumber(jackCapacityTon, 0),
-    fixedPressureBar: referenceBar,
-    formula: "Pressione [bar] = carico del gradino [kN] × 700 bar / portata del martinetto [kN].",
-    baseLoad,
-    maxTestLoad,
-    exceedsJackCapacity: maxTestLoad > jackCapacityKn,
+    chartExercise,
+    chartCollaudo,
+    chartLoad,
+    chartUnload,
+    chartAll: [...chartCollaudo, ...chartUnload],
+    pressureReferenceLoadKn: referenceLoadKn,
+    fixedJackTon: FIXED_JACK_TON,
+    fixedPressureBar: FIXED_PRESSURE_BAR,
+    formula: "Pressione [bar] = carico del gradino [kN] × 700 bar / 294,30 kN. Il martinetto è fisso a 30 tonnellate e il manometro è fisso a 700 bar.",
+    maxTestLoad: toNumber(testLoad, 0),
+    exceedsJackCapacity: toNumber(testLoad, 0) > referenceLoadKn,
   };
 }
 
 export function validateTest({ data, result, photo }) {
   const errors = [];
-
   if (!data.pileId) errors.push("Identificativo palo mancante");
-  if (!data.exerciseLoad && !data.testLoad) errors.push("Carico di esercizio o carico massimo di collaudo mancante");
-  if (!data.jackCapacityTon || Number(data.jackCapacityTon) <= 0) errors.push("Portata martinetto mancante");
-  if (result.exceedsJackCapacity) errors.push("Il carico massimo supera la portata nominale del martinetto");
-  if (result.measuredCount === 0) errors.push("Inserire almeno una lettura per generare il grafico");
+  if (!data.testLoad) errors.push("Carico massimo di prova mancante");
+  if (result.exceedsJackCapacity) errors.push("Il carico massimo supera la portata del martinetto da 30 ton a 700 bar");
+  if (result.measuredCount === 0) errors.push("Inserire almeno una lettura dei comparatori");
   if (!photo) errors.push("Foto/schema della prova mancante");
   if (!data.tecnico) errors.push("Tecnico esecutore mancante");
-
   return errors;
 }
