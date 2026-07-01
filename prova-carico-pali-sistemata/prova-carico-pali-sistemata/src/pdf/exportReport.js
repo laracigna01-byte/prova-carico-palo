@@ -292,18 +292,33 @@ export async function exportReport({ data, result, photo = null, preview = false
   drawCompactCell(pdf, leftX, ly, w4, h, "Identificativo palo", data.pileId);
   drawCompactCell(pdf, leftX + w4, ly, w4, h, "Lunghezza", `${safeText(data.length, "—")} m`);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico massimo prova", `${safeText(data.testLoad, "—")} kN`);
-  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Metodo", "Inserimento diretto kN");
-  ly += h;
-
+  drawCompactCell(
+  pdf,
+  leftX + 3 * w4,
+  ly,
+  w4,
+  h,
+  "Portata martinetto",
+  `${safeText(data.jackCapacityTon, "30")} t`
+);
   drawCompactCell(pdf, leftX, ly, w4, h, "Carico massimo prova", `${safeText(data.testLoad, "—")} kN`);
-  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", data.jackId);
+  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto",
+`${safeText(data.jackId, "—")} (${safeText(data.jackCapacityTon, "30")} t)`);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Comparatori", data.comparatorId);
   ly += h;
 
-  drawCompactCell(pdf, leftX, ly, w3, h, "Martinetto fisso", "30 ton");
+  drawCompactCell(
+  pdf,
+  leftX,
+  ly,
+  w3,
+  h,
+  "Portata martinetto",
+  `${safeText(data.jackCapacityTon, "30")} t`
+);
   drawCompactCell(pdf, leftX + w3, ly, w3, h, "Rif. calcolo", `${safeText(result.pressureReferenceLoadKn, "294,30")} kN / 700 bar`);
-  drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Formula pressione", "bar = kN step x 700 / 294,30");
+  drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Formula pressione", `bar = kN × 700 / ${fmt(result.pressureReferenceLoadKn,2)}`);
   ly += h + 2;
 
   ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
@@ -446,7 +461,14 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(0, 0, 0);
 
   let ny = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteStartY, CW - 4, 2.4);
-  ny = addWrapped(pdf, "I kN dei gradini sono calcolati automaticamente dal carico massimo di prova inserito dal tecnico. La pressione e calcolata automaticamente con la proporzione del martinetto fisso: bar step = kN step x 700 / 294,30. Il martinetto e fisso a 30 tonnellate e il manometro a 700 bar. Il tecnico inserisce manualmente le letture dei 3 comparatori, che vengono riportate senza ricalcoli.", ML + 2, ny + 1.2, CW - 4, 2.4);
+  ny = addWrapped(
+  pdf,
+  `I kN dei gradini sono calcolati automaticamente dal carico di prova inserito dal tecnico. La pressione è calcolata automaticamente con la proporzione: portata del martinetto : 700 bar = carico del gradino : x. La portata del martinetto utilizzata per il calcolo è ${safeText(data.jackCapacityTon, "30")} t (${fmt(result.pressureReferenceLoadKn, 2)} kN). Il manometro di riferimento è da 700 bar. Il tecnico inserisce manualmente le letture dei tre comparatori, che vengono riportate senza alcun ricalcolo.`,
+  ML + 2,
+  ny + 1.2,
+  CW - 4,
+  2.4
+);
   ny += 1.2;
 
   pdf.setFont("helvetica", "bold");
