@@ -40,22 +40,33 @@ function normalizeReadings(value) {
 }
 
 function calcComparator(values) {
-  const nums = normalizeComparatorList(values)
+  const normalized = normalizeComparatorList(values);
+
+  const nums = normalized
     .map((v) => toNumber(v, null))
     .filter((v) => v !== null);
 
   const count = nums.length;
-  const complete = count >= READINGS_PER_COMPARATOR;
   const lastThree = nums.slice(-3);
 
+  const stable =
+    lastThree.length === 3 &&
+    Math.max(...lastThree) - Math.min(...lastThree) <= 0.02;
+
+  const value = stable
+    ? round(lastThree.reduce((sum, v) => sum + v, 0) / 3, 3)
+    : nums.length
+      ? round(nums[nums.length - 1], 3)
+      : null;
+
   return {
-    values: normalizeComparatorList(values),
+    values: normalized,
     count,
-    complete,
-    value: complete && lastThree.length ? round(lastThree.reduce((sum, v) => sum + v, 0) / lastThree.length, 3) : null,
+    complete: stable,
+    stable,
+    value,
   };
 }
-
 function calcStepStats(readings) {
   const comparatorStats = Object.fromEntries(
     COMPARATORS.map((key) => [key, calcComparator(readings[key])])
@@ -153,7 +164,7 @@ export function calcPalo({ readings, loadSteps, exerciseLoad, testLoad, jackCapa
   const unload = rows.find((r) => r.isResidual) || rows.filter((r) => r.unload).at(-1) || null;
   const exerciseResidual = rows.find((r) => r.isExerciseResidual) || rows.find((r) => r.key === "se0") || null;
 
-  const measuredCount = rows.filter((r) => r.complete).length;
+  const measuredCount = rows.filter((r) => r.meanSettlement !== null).length;
   const maxDisplacement = max?.meanSettlement ?? null;
   const exerciseDisplacement = exerciseMax?.meanSettlement ?? null;
   const residual = unload?.meanSettlement ?? null;
@@ -217,7 +228,7 @@ export function validateTest({ data, result, photo }) {
   if (!data.exerciseLoad && !data.testLoad) errors.push("Carico di esercizio o carico massimo di collaudo mancante");
   if (!data.jackCapacityTon || Number(data.jackCapacityTon) <= 0) errors.push("Portata martinetto mancante");
   if (result.exceedsJackCapacity) errors.push("Il carico massimo supera la portata nominale del martinetto");
-  if (result.measuredCount === 0) errors.push("Inserire almeno 9 letture per ciascuno dei 3 comparatori");
+  if (result.measuredCount === 0) errors.push("Inserire almeno una lettura per generare il grafico");
   if (!photo) errors.push("Foto/schema della prova mancante");
   if (!data.tecnico) errors.push("Tecnico esecutore mancante");
 
