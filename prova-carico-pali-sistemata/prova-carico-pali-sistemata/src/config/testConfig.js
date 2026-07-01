@@ -1,13 +1,25 @@
 export const LOAD_STEPS = [
-  { key: "p0", cycle: "prova", cycleLabel: "Carico", label: "0%", percent: 0, factor: 0, phase: "carico" },
-  { key: "p25", cycle: "prova", cycleLabel: "Carico", label: "25%", percent: 25, factor: 0.25, phase: "carico" },
-  { key: "p50", cycle: "prova", cycleLabel: "Carico", label: "50%", percent: 50, factor: 0.50, phase: "carico" },
-  { key: "p75", cycle: "prova", cycleLabel: "Carico", label: "75%", percent: 75, factor: 0.75, phase: "carico" },
-  { key: "p100", cycle: "prova", cycleLabel: "Carico massimo", label: "100%", percent: 100, factor: 1.00, phase: "carico", isMax: true },
-  { key: "s75", cycle: "scarico", cycleLabel: "Scarico", label: "75%", percent: 75, factor: 0.75, phase: "scarico", unload: true },
-  { key: "s50", cycle: "scarico", cycleLabel: "Scarico", label: "50%", percent: 50, factor: 0.50, phase: "scarico", unload: true },
-  { key: "s25", cycle: "scarico", cycleLabel: "Scarico", label: "25%", percent: 25, factor: 0.25, phase: "scarico", unload: true },
-  { key: "s0", cycle: "scarico", cycleLabel: "Scarico", label: "0%", percent: 0, factor: 0, phase: "scarico", unload: true, isResidual: true }
+  { key: "e0", cycle: "esercizio", cycleLabel: "Carico esercizio", label: "0%", percent: 0, factor: 0, phase: "carico" },
+  { key: "e25", cycle: "esercizio", cycleLabel: "Carico esercizio", label: "25%", percent: 25, factor: 0.25, phase: "carico" },
+  { key: "e50", cycle: "esercizio", cycleLabel: "Carico esercizio", label: "50%", percent: 50, factor: 0.50, phase: "carico" },
+  { key: "e75", cycle: "esercizio", cycleLabel: "Carico esercizio", label: "75%", percent: 75, factor: 0.75, phase: "carico" },
+  { key: "e100", cycle: "esercizio", cycleLabel: "Carico esercizio", label: "100%", percent: 100, factor: 1.00, phase: "carico", isExerciseMax: true },
+
+  { key: "se50", cycle: "scarico-esercizio", cycleLabel: "Scarico esercizio", label: "50%", percent: 50, factor: 0.50, phase: "scarico", unload: true },
+  { key: "se0", cycle: "scarico-esercizio", cycleLabel: "Scarico esercizio", label: "0%", percent: 0, factor: 0, phase: "scarico", unload: true, isExerciseResidual: true },
+
+  { key: "c0", cycle: "collaudo", cycleLabel: "Carico collaudo", label: "0%", percent: 0, factor: 0, phase: "carico" },
+  { key: "c25", cycle: "collaudo", cycleLabel: "Carico collaudo", label: "25%", percent: 25, factor: 0.25, phase: "carico" },
+  { key: "c50", cycle: "collaudo", cycleLabel: "Carico collaudo", label: "50%", percent: 50, factor: 0.50, phase: "carico" },
+  { key: "c75", cycle: "collaudo", cycleLabel: "Carico collaudo", label: "75%", percent: 75, factor: 0.75, phase: "carico" },
+  { key: "c100", cycle: "collaudo", cycleLabel: "Carico collaudo", label: "100%", percent: 100, factor: 1.00, phase: "carico" },
+  { key: "c125", cycle: "collaudo", cycleLabel: "Carico collaudo", label: "125%", percent: 125, factor: 1.25, phase: "carico" },
+  { key: "c150", cycle: "collaudo", cycleLabel: "Carico massimo", label: "150%", percent: 150, factor: 1.50, phase: "carico", isMax: true },
+
+  { key: "sc150", cycle: "scarico-collaudo", cycleLabel: "Scarico collaudo", label: "150%", percent: 150, factor: 1.50, phase: "scarico", unload: true },
+  { key: "sc100", cycle: "scarico-collaudo", cycleLabel: "Scarico collaudo", label: "100%", percent: 100, factor: 1.00, phase: "scarico", unload: true },
+  { key: "sc50", cycle: "scarico-collaudo", cycleLabel: "Scarico collaudo", label: "50%", percent: 50, factor: 0.50, phase: "scarico", unload: true },
+  { key: "sc0", cycle: "scarico-collaudo", cycleLabel: "Scarico collaudo", label: "0%", percent: 0, factor: 0, phase: "scarico", unload: true, isResidual: true }
 ];
 
 export const NORME = {
@@ -62,6 +74,16 @@ export const DEFAULT_PROJECT = {
   signature: ""
 };
 
-const emptyComparators = () => ({ c1: "", c2: "", c3: "" });
-export const initialReadings = () => Object.fromEntries(LOAD_STEPS.map((s) => [s.key, emptyComparators()]));
-export const initialPressures = () => Object.fromEntries(LOAD_STEPS.map((s) => [s.key, ""]));
+const emptyComparatorReadings = () => Array(9).fill("");
+
+const emptyComparators = () => ({
+  c1: emptyComparatorReadings(),
+  c2: emptyComparatorReadings(),
+  c3: emptyComparatorReadings(),
+});
+
+export const initialReadings = () =>
+  Object.fromEntries(LOAD_STEPS.map((s) => [s.key, emptyComparators()]));
+
+export const initialPressures = () =>
+  Object.fromEntries(LOAD_STEPS.map((s) => [s.key, ""]));
