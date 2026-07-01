@@ -300,3 +300,93 @@ body.theme-light .pressure-row output {
 @media (max-width: 760px) {
   .pressure-row output { min-height: 46px; font-size: 16px; }
 }
+
+/* Letture multiple per prova su pali */
+.multi-comparator-grid {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  background: #0d1117;
+}
+.comparator-block {
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #161b22;
+}
+.comparator-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  border-bottom: 1px solid #30363d;
+  color: #e6edf3;
+  font-size: 12px;
+}
+.comparator-title span {
+  color: #8b949e;
+  font-weight: 800;
+}
+.reading-nine-grid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 1px;
+  background: #30363d;
+}
+.reading-nine-grid label {
+  display: block;
+  background: #0d1117;
+  padding: 5px 3px;
+  text-align: center;
+}
+.reading-nine-grid small {
+  display: block;
+  color: #8b949e;
+  font: 10px ui-monospace, monospace;
+}
+.reading-nine-grid input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #30363d;
+  color: #e6edf3;
+  text-align: center;
+  outline: none;
+  font: 14px ui-monospace, Consolas, monospace;
+}
+.step-warning {
+  padding: 8px 10px;
+  color: #f85149;
+  background: rgba(248, 81, 73, .08);
+  border-bottom: 1px solid rgba(248, 81, 73, .35);
+  font-weight: 800;
+  font-size: 12px;
+}
+body.theme-light .multi-comparator-grid,
+body.theme-light .reading-nine-grid label {
+  background: #ffffff;
+}
+body.theme-light .comparator-block {
+  background: #ffffff;
+  border-color: #d1d5db;
+}
+body.theme-light .comparator-title {
+  color: #111827;
+  border-color: #d1d5db;
+}
+body.theme-light .reading-nine-grid {
+  background: #d1d5db;
+}
+body.theme-light .reading-nine-grid input {
+  color: #111827;
+  border-color: #d1d5db;
+}
+@media (max-width: 760px) {
+  .reading-nine-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .reading-nine-grid input {
+    min-height: 38px;
+    font-size: 16px;
+  }
+}

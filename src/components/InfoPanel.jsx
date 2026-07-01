@@ -7,6 +7,15 @@ import { NORME } from "../config/testConfig";
 export function InfoPanel({ data, setData, photo, setPhoto }) {
   const [open, setOpen] = useState(true);
   const upd = (key) => (value) => setData((prev) => ({ ...prev, [key]: value }));
+
+  const updateExerciseLoad = (value) => {
+    setData((prev) => ({
+      ...prev,
+      exerciseLoad: value,
+      testLoad: value ? Number(value || 0) * 1.5 : prev.testLoad,
+    }));
+  };
+
   return (
     <div className="panel">
       <button className="panel-toggle" type="button" onClick={() => setOpen(!open)}>
@@ -35,61 +44,25 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
           <SectionHeader label="Dati palo" step="B" color={T.accentOrange} />
           <div className="grid small">
             <TextInput label="Identificativo palo" value={data.pileId} onChange={upd("pileId")} placeholder="P-01" />
-            <TextInput label="Tipologia palo" value={data.pileType} onChange={upd("pileType")} placeholder="Trivellato, CFA, micropalo..." />
             <NumberInput label="Diametro (mm)" value={data.diameter} onChange={upd("diameter")} placeholder="mm" />
             <NumberInput label="Lunghezza (m)" value={data.length} onChange={upd("length")} placeholder="m" />
-            <TextInput label="Quota testa palo" value={data.quotaTestaPalo} onChange={upd("quotaTestaPalo")} />
-           <NumberInput
-  label="Carico progetto/SLE (kN)"
-  value={data.designLoadSLE}
-  onChange={(value) =>
-    setData((prev) => {
-      const ne = Number(value || 0);
-      const coeff = Number(prev.testFactor || 1.5);
-      return {
-        ...prev,
-        designLoadSLE: value,
-        testLoad: ne * coeff,
-      };
-    })
-  }
-/>
-
-<NumberInput
-  label="Coefficiente prova"
-  value={data.testFactor || 1.5}
-  onChange={(value) =>
-    setData((prev) => {
-      const ne = Number(prev.designLoadSLE || 0);
-      const coeff = Number(value || 1.5);
-      return {
-        ...prev,
-        testFactor: value,
-        testLoad: ne * coeff,
-      };
-    })
-  }
-/>
-
-<NumberInput
-  label="Carico massimo prova (kN)"
-  value={data.testLoad}
-  readOnly
-/>
+            <NumberInput label="Carico di esercizio (kN)" value={data.exerciseLoad} onChange={updateExerciseLoad} placeholder="kN" />
+            <NumberInput label="Carico massimo collaudo 150% (kN)" value={data.testLoad} onChange={upd("testLoad")} placeholder="kN" />
           </div>
 
           <SectionHeader label="Strumentazione" step="C" color={T.accent} />
           <div className="grid small">
-            <TextInput label="Martinetto" value={data.jackId} onChange={upd("jackId")} placeholder="Martinetto 30 ton" />
-            <TextInput label="Manometro / cella" value={data.manometerId} onChange={upd("manometerId")} placeholder="Manometro 700 bar" />
+            <TextInput label="Martinetto" value={data.jackId} onChange={upd("jackId")} placeholder="M-01" />
+            <NumberInput label="Portata martinetto (t)" value={data.jackCapacityTon} onChange={upd("jackCapacityTon")} placeholder="30" />
+            <TextInput label="Manometro / cella" value={data.manometerId} onChange={upd("manometerId")} placeholder="700" />
             <TextInput label="Comparatori" value={data.comparatorId} onChange={upd("comparatorId")} />
             <TextInput label="Presenti" value={data.presenti} onChange={upd("presenti")} />
           </div>
           <div className="norm-box">
-            <b>Taratura fissa di calcolo</b>
-            <span>Martinetto 30 ton = 294,30 kN · Manometro 700 bar. I bar vengono calcolati automaticamente in proporzione al carico kN dello step.</span>
+            <b>Calcolo pressione</b>
+            <span>La pressione viene calcolata con la proporzione: portata del martinetto : 700 bar = carico del gradino : x.</span>
           </div>
-          <div className="note mini"><b>Calcolo automatico bar:</b> bar step = kN step × 700 / 294,30. Il perito inserisce solo il carico di esercizio e le letture dei 3 comparatori.</div>
+          <div className="note mini"><b>Letture:</b> per ogni gradino il tecnico deve inserire almeno 9 letture per ciascuno dei 3 comparatori.</div>
 
           <SectionHeader label="Note e foto" step="D" color={T.accentYellow} />
           <TextArea label="Note tecniche" value={data.note} onChange={upd("note")} placeholder="Annotazioni su condizioni di prova, attrezzatura, anomalie, dati del progettista..." />

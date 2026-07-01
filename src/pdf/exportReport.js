@@ -207,6 +207,86 @@ function drawPdfChart(pdf, rows, x, y, w, h) {
   pdf.text(fmt(maxY, 1), plotX - 1.2, plotY + 1.2, { align: "right" });
 }
 
+function drawPdfChartComparators(pdf, result, x, y, w, h) {
+  pdf.setFillColor(255, 255, 255);
+  pdf.rect(x, y, w, h, "F");
+  pdf.setDrawColor(180, 180, 180);
+  pdf.rect(x, y, w, h);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(5.8);
+  pdf.setTextColor(20, 20, 20);
+  pdf.text("Curva carico applicato - cedimento comparatori", x + 2, y + 4);
+
+  const series = [
+    { name: "C1", points: result.chartC1 || [], color: [52, 107, 180] },
+    { name: "C2", points: result.chartC2 || [], color: [46, 160, 67] },
+    { name: "C3", points: result.chartC3 || [], color: [240, 136, 62] },
+  ];
+
+  const allPoints = series.flatMap((s) => s.points || []).filter(
+    (p) => Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y))
+  );
+
+  if (!allPoints.length) {
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(6.5);
+    pdf.text("Grafico disponibile dopo inserimento letture.", x + w / 2, y + h / 2, { align: "center" });
+    return;
+  }
+
+  const plotX = x + 13;
+  const plotY = y + 11;
+  const plotW = w - 22;
+  const plotH = h - 20;
+  const maxX = Math.max(...allPoints.map((p) => Number(p.x)), 1);
+  const maxY = Math.max(...allPoints.map((p) => Number(p.y)), 1);
+
+  pdf.setDrawColor(80, 80, 80);
+  pdf.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
+  pdf.line(plotX, plotY, plotX, plotY + plotH);
+
+  pdf.setDrawColor(220, 220, 220);
+  for (let i = 1; i <= 4; i++) {
+    const gy = plotY + (plotH / 5) * i;
+    const gx = plotX + (plotW / 5) * i;
+    pdf.line(plotX, gy, plotX + plotW, gy);
+    pdf.line(gx, plotY, gx, plotY + plotH);
+  }
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(4.7);
+  pdf.setTextColor(70, 70, 70);
+  pdf.text("Cedimento [mm]", plotX + plotW / 2, y + h - 3.2, { align: "center" });
+  pdf.text("Carico [kN]", x + 4.4, plotY + plotH / 2, { angle: 90 });
+
+  function px(p) { return plotX + (Number(p.x) / maxX) * plotW; }
+  function py(p) { return plotY + plotH - (Number(p.y) / maxY) * plotH; }
+
+  series.forEach((serie, index) => {
+    const points = (serie.points || []).filter((p) => Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y)));
+    pdf.setDrawColor(...serie.color);
+    pdf.setFillColor(...serie.color);
+    let prev = null;
+    points.forEach((p) => {
+      const cx = px(p);
+      const cy = py(p);
+      if (prev) pdf.line(prev.x, prev.y, cx, cy);
+      pdf.circle(cx, cy, p.phase === "origine" ? 0.7 : 1, "F");
+      prev = { x: cx, y: cy };
+    });
+    pdf.setFontSize(4.6);
+    pdf.setTextColor(...serie.color);
+    pdf.text(serie.name, plotX + plotW - 18, plotY + 4 + index * 4);
+  });
+
+  pdf.setFontSize(4.4);
+  pdf.setTextColor(80, 80, 80);
+  pdf.text("0", plotX - 1.2, plotY + plotH + 2.8, { align: "right" });
+  pdf.text(fmt(maxX, 2), plotX + plotW, plotY + plotH + 2.8, { align: "right" });
+  pdf.text(fmt(maxY, 1), plotX - 1.2, plotY + 1.2, { align: "right" });
+}
+
 export async function exportReport({ data, result, photo = null, preview = false }) {
   const pdf = new jsPDF({
     unit: "mm",
@@ -291,24 +371,24 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   drawCompactCell(pdf, leftX, ly, w4, h, "Identificativo palo", data.pileId);
   drawCompactCell(pdf, leftX + w4, ly, w4, h, "Lunghezza", `${safeText(data.length, "—")} m`);
-  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio Ne", `${safeText(data.designLoadSLE, "—")} kN`);
-  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Coeff. prova", `${safeText(data.testFactor || "1.50", "—")}`);
+  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio", `${safeText(data.exerciseLoad || result.baseLoad, "—")} kN`);
+  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Collaudo 150%", `${safeText(data.testLoad || result.maxTestLoad, "—")} kN`);
   ly += h;
 
-  drawCompactCell(pdf, leftX, ly, w4, h, "Carico massimo prova", `${safeText(data.testLoad || (Number(data.designLoadSLE || 0) * Number(data.testFactor || 1.5)), "—")} kN`);
-  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", data.jackId);
+  drawCompactCell(pdf, leftX, ly, w4, h, "Diametro", `${safeText(data.diameter, "—")} mm`);
+  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", `${safeText(data.jackId, "—")} (${safeText(data.jackCapacityTon, "30")} t)`);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Comparatori", data.comparatorId);
   ly += h;
 
-  drawCompactCell(pdf, leftX, ly, w3, h, "Martinetto fisso", "30 ton");
+  drawCompactCell(pdf, leftX, ly, w3, h, "Portata martinetto", `${safeText(data.jackCapacityTon, "30")} t`);
   drawCompactCell(pdf, leftX + w3, ly, w3, h, "Rif. calcolo", `${safeText(result.pressureReferenceLoadKn, "294,30")} kN / 700 bar`);
-  drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Formula pressione", "bar = kN step x 700 / 294,30");
+  drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Formula pressione", "bar = kN step x 700 / portata martinetto");
   ly += h + 2;
 
   ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
 
-  const colW = [8, 20, 13, 18, 19, 20, 18];
+  const colW = [7, 20, 12, 17, 17, 14, 9, 9, 11];
   const headerH = 5.4;
   const rows = result.rows || [];
   const rowH = 5.2;
@@ -321,7 +401,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(20, 20, 20);
 
   let tx = leftX;
-  ["N", "Ciclo", "%", "Press. [bar]", "Calc. [kN]", "Rif. mart. [kN]", "Ced. medio"].forEach((head, i) => {
+  ["N", "Ciclo", "%", "Press.", "kN", "Mart.", "C1", "C2", "Medio"].forEach((head, i) => {
     pdf.text(head, tx + 1.1, ly + 3.7);
     tx += colW[i];
   });
@@ -336,7 +416,7 @@ export async function exportReport({ data, result, photo = null, preview = false
     pdf.rect(leftX, ly, leftW, rowH);
 
     tx = leftX;
-    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(result.pressureReferenceLoadKn, 2), fmt(r.reading, 3)].forEach((value, i) => {
+    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(result.pressureReferenceLoadKn, 1), fmt(r.comparatorValues?.c1, 2), fmt(r.comparatorValues?.c2, 2), fmt(r.reading, 2)].forEach((value, i) => {
       pdf.text(String(value), tx + 1.1, ly + 3.5, { maxWidth: colW[i] - 2.2 });
       tx += colW[i];
     });
@@ -383,10 +463,10 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   const chartY = Math.max(ly, ry) + 4;
 
-  drawSection(pdf, ML, chartY, CW, "CURVA CARICO CALCOLATO - SPOSTAMENTO");
+  drawSection(pdf, ML, chartY, CW, "CURVA CARICO - SPOSTAMENTO");
 
   const chartH = 66;
-  drawPdfChart(pdf, rows, ML, chartY + 5.5, CW, chartH);
+  drawPdfChartComparators(pdf, result, ML, chartY + 5.5, CW, chartH);
 
   const bottomY = chartY + 5.5 + chartH + 4;
 
@@ -446,7 +526,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(0, 0, 0);
 
   let ny = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteStartY, CW - 4, 2.4);
-  ny = addWrapped(pdf, "I kN dei gradini sono calcolati automaticamente dal carico di esercizio/SLE. La pressione e calcolata automaticamente con la proporzione del martinetto: bar massimi : kN martinetto = bar step : kN step. Se il carico del martinetto e inserito in tonnellate, l app lo converte in kN. Il tecnico inserisce solo le letture dei 3 comparatori.", ML + 2, ny + 1.2, CW - 4, 2.4);
+  ny = addWrapped(pdf, "La pressione viene calcolata con la proporzione: portata del martinetto : 700 bar = carico del gradino : x. Per ogni gradino il tecnico inserisce almeno 9 letture per ciascuno dei 3 comparatori; il grafico riporta le tre curve dei comparatori con origine 0,0.", ML + 2, ny + 1.2, CW - 4, 2.4);
   ny += 1.2;
 
   pdf.setFont("helvetica", "bold");
