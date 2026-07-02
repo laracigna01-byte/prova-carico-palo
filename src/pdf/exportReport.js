@@ -388,7 +388,7 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
 
-  const colW = [7, 20, 12, 17, 17, 14, 9, 9, 11];
+  const colW = [7, 28, 18, 22, 22, 19];
   const headerH = 5.4;
   const rows = result.rows || [];
   const rowH = 5.2;
@@ -401,7 +401,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(20, 20, 20);
 
   let tx = leftX;
-  ["N", "Ciclo", "%", "Press.", "kN", "Mart.", "C1", "C2", "Medio"].forEach((head, i) => {
+  ["N", "Ciclo", "%", "Press. [bar]", "Carico [kN]", "Ced. medio"].forEach((head, i) => {
     pdf.text(head, tx + 1.1, ly + 3.7);
     tx += colW[i];
   });
@@ -416,7 +416,7 @@ export async function exportReport({ data, result, photo = null, preview = false
     pdf.rect(leftX, ly, leftW, rowH);
 
     tx = leftX;
-    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(result.pressureReferenceLoadKn, 1), fmt(r.comparatorValues?.c1, 2), fmt(r.comparatorValues?.c2, 2), fmt(r.reading, 2)].forEach((value, i) => {
+    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.reading, 2)].forEach((value, i) => {
       pdf.text(String(value), tx + 1.1, ly + 3.5, { maxWidth: colW[i] - 2.2 });
       tx += colW[i];
     });
