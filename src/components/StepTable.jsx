@@ -24,18 +24,18 @@ function normalize(value) {
 
 function getNums(values) {
   return values
-    .filter((v) => v !== "" && v !== null && v !== undefined)
+    .filter((v) => String(v).trim() !== "")
     .map((v) => Number(String(v).replace(",", ".")))
-    .filter(Number.isFinite);
+    .filter((v) => Number.isFinite(v));
 }
 
 function isStable(values) {
   const nums = getNums(values);
-  const lastThree = nums.slice(-3);
+  const firstThree = nums.slice(0, 3);
 
   return (
-    lastThree.length === 3 &&
-    Math.max(...lastThree) - Math.min(...lastThree) <= 0.02
+    firstThree.length === 3 &&
+    Math.max(...firstThree) - Math.min(...firstThree) <= 0.02
   );
 }
 
@@ -105,7 +105,7 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
             <div className="comparator-title">
               <b>{labels[key]}</b>
               <span className={stableMap[key] ? "ok" : "pending"}>
-                {stableMap[key] ? "STABILE" : `${counts[key]}/3 letture stabili`}
+              {stableMap[key] ? "STABILE" : "In attesa di stabilizzazione"}
               </span>
             </div>
 
@@ -117,7 +117,7 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
                     type="number"
                     inputMode="decimal"
                     step="0.01"
-                    value={reading || ""}
+                    value={reading ?? ""}
                     onChange={(e) => updateReading(key, index, e.target.value)}
                     placeholder="0,00"
                   />

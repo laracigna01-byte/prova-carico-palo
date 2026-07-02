@@ -231,7 +231,7 @@ export function Results({ result, data, setData, chartRef }) {
         la proporzione: portata del martinetto : 700 bar = carico del gradino :
         x. Le letture dei 3 comparatori sono manuali; il grafico utilizza le
         letture disponibili e considera stabile ogni comparatore quando le
-        ultime 3 letture sono coerenti.
+        prime 3 letture sono coerenti.
       </div>
     </div>
   );
