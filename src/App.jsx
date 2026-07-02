@@ -73,19 +73,45 @@ export default function App() {
     window.alert(`Prova ${id} salvata in archivio.`);
   }
 
-  function openRecord(record) {
-    setData(record.data);
-    setReadings(record.readings || initialReadings());
-    setPhoto(record.photo || null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+ function openRecord(record) {
+  const restoredData = {
+    ...DEFAULT_PROJECT,
+    ...(record.data || {}),
+  };
 
-  function duplicateRecord(record) {
-    setData({ ...record.data, reportId: nextReportId(), pileId: `${record.data.pileId || "P"}-COPIA` });
-    setReadings(record.readings || initialReadings());
-    setPhoto(record.photo || null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  const restoredReadings = {
+    ...initialReadings(),
+    ...(record.readings || {}),
+  };
+
+  setData(restoredData);
+  setReadings(restoredReadings);
+  setPhoto(record.photo || null);
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function duplicateRecord(record) {
+  const newId = nextReportId();
+
+  const duplicatedData = {
+    ...DEFAULT_PROJECT,
+    ...(record.data || {}),
+    reportId: newId,
+    pileId: `${record.data?.pileId || "P"}-COPIA`,
+  };
+
+  const duplicatedReadings = {
+    ...initialReadings(),
+    ...(record.readings || {}),
+  };
+
+  setData(duplicatedData);
+  setReadings(duplicatedReadings);
+  setPhoto(record.photo || null);
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
   function exportCurrent() {
     exportReport({ data, result, photo });
