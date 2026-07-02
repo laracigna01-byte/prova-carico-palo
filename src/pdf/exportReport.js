@@ -426,7 +426,7 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   ry = drawSection(pdf, rightX, ry, rightW, "DOCUMENTAZIONE FOTOGRAFICA");
 
-  const photoH = 72;
+  const photoH = 60;
   pdf.setDrawColor(185, 185, 185);
   pdf.rect(rightX, ry, rightW, photoH);
 
@@ -460,12 +460,37 @@ export async function exportReport({ data, result, photo = null, preview = false
   }
 
   ry += photoH + 3;
+  ry = drawSection(pdf, rightX, ry, rightW, "NOTE TECNICHE");
+
+pdf.setFont("helvetica", "normal");
+pdf.setFontSize(5.2);
+pdf.setTextColor(0, 0, 0);
+
+ry = addWrapped(
+  pdf,
+  data.note || "Nessuna nota inserita.",
+  rightX + 2,
+  ry,
+  rightW - 4,
+  2.4
+);
+
+ry = addWrapped(
+  pdf,
+  "Pressione calcolata con proporzione: portata martinetto : 700 bar = carico gradino : x.",
+  rightX + 2,
+  ry + 1.2,
+  rightW - 4,
+  2.4
+);
+
+ry += 3;
 
   const chartY = Math.max(ly, ry) + 4;
 
   drawSection(pdf, ML, chartY, CW, "CURVA CARICO - SPOSTAMENTO");
 
-  const chartH = 66;
+  const chartH = 52;
   drawPdfChartComparators(pdf, result, ML, chartY + 5.5, CW, chartH);
 
   const bottomY = chartY + 5.5 + chartH + 4;
@@ -517,40 +542,7 @@ export async function exportReport({ data, result, photo = null, preview = false
     pdf.text("Firma", firmaX + 2, fy + 23);
   }
 
-  const noteY = bottomY + 32;
-
-  const noteStartY = drawSection(pdf, ML, noteY, CW, "NOTE TECNICHE E RIFERIMENTI");
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.2);
-  pdf.setTextColor(0, 0, 0);
-
-  let ny = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, noteStartY, CW - 4, 2.4);
-  ny = addWrapped(pdf, "La pressione viene calcolata con la proporzione: portata del martinetto : 700 bar = carico del gradino : x. Per ogni gradino il tecnico inserisce almeno 9 letture per ciascuno dei 3 comparatori; il grafico riporta le tre curve dei comparatori con origine 0,0.", ML + 2, ny + 1.2, CW - 4, 2.4);
-  ny += 1.2;
-
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Riferimenti normativi:", ML + 2, ny);
-  ny += 2.7;
-
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`${NORME.uni}`, ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 2.7;
-
-  pdf.text(`${NORME.dm}`, ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 2.7;
-
-  pdf.text("D.M. 17/01/2018 (NTC 2018)", ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 2.7;
-
-  pdf.text("Circolare C.S.LL.PP. n. 7/2019", ML + 2, ny, { maxWidth: CW - 4 });
-  ny += 3.2;
-
-  pdf.setFont("helvetica", "italic");
-  pdf.setFontSize(4.8);
-  addWrapped(pdf, NORME.dichiarazione, ML + 2, ny, CW - 4, 2.2);
-
-  drawFooter(pdf, ML, PW, PH);
+drawFooter(pdf, ML, PW, PH);
 
   const name = cleanFileName(`Minuta_prova_palo_${data.pileId || data.reportId || "report"}.pdf`);
   const blob = pdf.output("blob");
