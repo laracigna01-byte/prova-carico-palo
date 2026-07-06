@@ -131,11 +131,15 @@ function duplicateRecord(record) {
   }
 
   return (
+  <LoginGate
+    appName="Sistema Gestione Prove DISMAT"
+    moduleName="Prova di carico su palo"
+  >
     <main className="app-shell">
       <Header
-  theme={theme}
-  setTheme={setTheme}
-/>
+        theme={theme}
+        setTheme={setTheme}
+      />
       <InfoPanel data={data} setData={setData} photo={photo} setPhoto={setPhoto} />
 
       <section className="summary-strip">
@@ -183,5 +187,6 @@ function duplicateRecord(record) {
 
       <Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onExport={exportRecord} />
     </main>
+  </LoginGate>
   );
 }
