@@ -14,7 +14,7 @@ import { exportReport } from "./pdf/exportReport";
 import { exportCsv } from "./utils/exportCsv";
 import { fmt } from "./utils/formatters";
 import { listTests, nextReportId, saveTest, writeTests, loadServerTests, syncServerTests } from "./utils/storage";
-
+import { LoginGate } from "./security/LoginGate";
 export default function App() {
   const [data, setData] = useState(DEFAULT_PROJECT);
   const [readings, setReadings] = useState(initialReadings);
