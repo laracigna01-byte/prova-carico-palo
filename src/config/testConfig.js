@@ -60,8 +60,6 @@ export const DEFAULT_PROJECT = {
   comparatorCount: 3,
   note: "",
   photoCaption: "Foto della prova di carico statica assiale su palo",
-  outcome: "Positivo",
-  outcomeNotes: "",
   signature: ""
 };
 

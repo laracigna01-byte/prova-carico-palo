@@ -36,8 +36,6 @@ export function exportCsv({ data, result }) {
       joinReadings(r.readings?.c3),
     ]),
     [],
-    ["Esito", data.outcome],
-    ["Osservazioni", data.outcomeNotes],
     ["Note tecniche", data.note]
   ];
   const csv = rows.map((row) => row.map(csvCell).join(";")).join("\n");

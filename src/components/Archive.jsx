@@ -27,7 +27,6 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport })
           item.data?.committente,
           item.data?.cantiere,
           item.data?.localita,
-          item.data?.outcome,
           item.data?.tecnico,
         ]
           .filter(Boolean)
@@ -62,7 +61,7 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport })
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cerca per ID, palo, committente, cantiere, esito..."
+            placeholder="Cerca per ID, palo, committente, cantiere..."
             aria-label="Cerca nell'archivio prove"
           />
           <small>
@@ -87,7 +86,6 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport })
                   <th>Palo</th>
                   <th>Committente</th>
                   <th>Cantiere</th>
-                  <th>Esito</th>
                   <th>Azioni</th>
                 </tr>
               </thead>
@@ -100,7 +98,6 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport })
                     <td>{item.data?.pileId || "—"}</td>
                     <td>{item.data?.committente || "—"}</td>
                     <td>{item.data?.cantiere || "—"}</td>
-                    <td>{item.data?.outcome || "—"}</td>
                     <td className="row-actions">
                       <button type="button" onClick={() => onOpen(item)}>
                         Apri

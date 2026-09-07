@@ -13,8 +13,20 @@ function safeJsonParse(value, fallback) {
   }
 }
 
+function stripOutcomeFields(record) {
+  if (!record || typeof record !== "object") return record;
+  const data = { ...(record.data || {}) };
+  delete data.outcome;
+  delete data.outcomeNotes;
+  return { ...record, data };
+}
+
+function stripOutcomeFromList(list) {
+  return (list || []).map(stripOutcomeFields);
+}
+
 function sortTests(list) {
-  return [...(list || [])].sort((a, b) => {
+  return stripOutcomeFromList(list).sort((a, b) => {
     const da = new Date(a?.savedAt || 0).getTime();
     const db = new Date(b?.savedAt || 0).getTime();
     return db - da;
@@ -175,6 +187,7 @@ export function writeTests(list) {
 }
 
 export function saveTest(record) {
+  record = stripOutcomeFields(record);
   const list = listTests();
   const idx = list.findIndex((x) => x.id === record.id);
   const next = idx >= 0 ? list.map((x) => (x.id === record.id ? record : x)) : [record, ...list];

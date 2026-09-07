@@ -91,7 +91,7 @@ export function LoadDisplacementChart({ result }) {
   );
 }
 
-export function Results({ result, data, setData, chartRef }) {
+export function Results({ result, data, chartRef }) {
   return (
     <div>
       <div className="cards">
@@ -125,48 +125,6 @@ export function Results({ result, data, setData, chartRef }) {
           unit="t"
           color={T.accentYellow}
           sub={`700 bar · ${fmt(result.pressureReferenceLoadKn, 2)} kN`}
-        />
-
-        <ResultCard
-          label="Esito dichiarato"
-          value={data.outcome || "—"}
-          unit=""
-          color={data.outcome === "Negativo" ? T.accentRed : T.accent}
-          sub="scelto dal tecnico"
-        />
-      </div>
-
-      <div className="outcome-box">
-        <b>Esito della prova</b>
-
-        <div className="outcome-options">
-          {["Positivo", "Positivo con osservazioni", "Negativo"].map((item) => (
-            <label key={item}>
-              <input
-                type="radio"
-                name="outcome"
-                checked={data.outcome === item}
-                onChange={() =>
-                  setData((p) => ({
-                    ...p,
-                    outcome: item,
-                  }))
-                }
-              />{" "}
-              {item}
-            </label>
-          ))}
-        </div>
-
-        <textarea
-          value={data.outcomeNotes || ""}
-          onChange={(e) =>
-            setData((p) => ({
-              ...p,
-              outcomeNotes: e.target.value,
-            }))
-          }
-          placeholder="Osservazioni sull'esito della prova"
         />
       </div>
 

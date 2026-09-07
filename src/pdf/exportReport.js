@@ -495,38 +495,8 @@ ry += 3;
 
   const bottomY = chartY + 5.5 + chartH + 4;
 
-  const esitoW = 66;
-  const firmaW = CW - esitoW - 5;
-  const firmaX = ML + esitoW + 5;
-
-  let ey = drawSection(pdf, ML, bottomY, esitoW, "ESITO DELLA PROVA");
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8);
-
-  const outcome = safeText(data.outcome, "Non dichiarato").toUpperCase();
-
-  if (outcome.includes("POSITIVO")) {
-    pdf.setTextColor(0, 120, 0);
-  } else if (outcome.includes("NEGATIVO")) {
-    pdf.setTextColor(180, 0, 0);
-  } else {
-    pdf.setTextColor(0, 0, 0);
-  }
-
-  pdf.text(outcome, ML + 2, ey + 5);
-
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.2);
-  addWrapped(
-    pdf,
-    data.outcomeNotes || "Nessuna osservazione sull'esito.",
-    ML + 2,
-    ey + 9.5,
-    esitoW - 4,
-    2.5
-  );
+  const firmaW = CW;
+  const firmaX = ML;
 
   let fy = drawSection(pdf, firmaX, bottomY, firmaW, "FIRMA TECNICO INCARICATO");
 
