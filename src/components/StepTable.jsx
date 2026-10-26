@@ -50,8 +50,8 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
     keys.map((key) => [key, isStable(readings[key])])
   );
 
-  const stableCount = keys.filter((key) => stableMap[key]).length;
-  const allStable = stableCount === 3;
+  const measuredCount = keys.filter((key) => counts[key] > 0).length;
+  const hasReadings = measuredCount > 0;
   const overLimit = Number(pressure) > 700;
 
   const updateReading = (compKey, index, nextValue) => {
@@ -75,8 +75,8 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
         </div>
 
         <div className="step-status">
-          <mark className={allStable ? "ok" : "pending"}>
-            {allStable ? "STABILE" : "DA VERIFICARE"}
+          <mark className={hasReadings ? "ok" : "pending"}>
+            {hasReadings ? `${measuredCount}/3 RILEVATI` : "DA COMPILARE"}
           </mark>
         </div>
       </div>
@@ -104,8 +104,8 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
           <div className="comparator-block" key={key}>
             <div className="comparator-title">
               <b>{labels[key]}</b>
-              <span className={stableMap[key] ? "ok" : "pending"}>
-              {stableMap[key] ? "STABILE" : "In attesa di stabilizzazione"}
+              <span className={counts[key] > 0 ? "ok" : "pending"}>
+              {counts[key] > 0 ? `${counts[key]} letture` : "Nessuna lettura"}
               </span>
             </div>
 
@@ -129,7 +129,7 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
       </div>
 
       <div className="step-summary">
-        Cedimento medio: <b>{fmt(step.reading, 3)} mm</b> · Scarto max-min:{" "}
+        Spostamento medio dalla lettura iniziale: <b>{fmt(step.reading, 3)} mm</b> · Scarto max-min:{" "}
         <b>{fmt(step.comparatorDelta, 3)} mm</b>
       </div>
     </div>
