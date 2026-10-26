@@ -180,8 +180,8 @@ export function calcPalo({
       : null;
 
   const chartPoint = (r, comparatorKey, comparatorLabel) => ({
-    x: r.comparatorValues?.[comparatorKey],
-    y: r.load,
+    x: r.load,
+    y: r.comparatorValues?.[comparatorKey],
     pressure: r.pressure,
     targetLoad: r.targetLoad,
     name: `${comparatorLabel} - ${r.cycleLabel} ${r.label}`,
