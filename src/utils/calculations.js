@@ -41,18 +41,16 @@ function calcComparator(values) {
     .filter((v) => v !== null);
 
   const firstThree = nums.slice(0, 3);
-
-  const stable =
-    firstThree.length === 3 &&
+  const stable = firstThree.length === 3 &&
     Math.max(...firstThree) - Math.min(...firstThree) <= 0.02;
 
   return {
-  values: list,
-  count: nums.length,
-  stable,
-  value: stable
-    ? round(firstThree.reduce((sum, v) => sum + v, 0) / 3, 3)
-    : null,
+    values: list,
+    count: nums.length,
+    stable,
+    // L'ultima lettura disponibile rappresenta la misura del gradino.
+    value: nums.length ? round(nums[nums.length - 1], 3) : null,
+  };
 };
 }
 
@@ -110,9 +108,22 @@ export function buildRows({
   const jackCapacityKn = round(toNumber(jackCapacityTon, 30) * toNumber(tonToKn, DEFAULT_TON_TO_KN), 2);
   const referenceBar = toNumber(pressureReferenceBar, DEFAULT_PRESSURE_BAR);
 
+  const baselineReadings = normalizeReadings(readings?.[loadSteps[0]?.key]);
+  const baseline = calcStepStats(baselineReadings).comparatorValues;
+
   return loadSteps.map((step, index) => {
     const stepReadings = normalizeReadings(readings?.[step.key]);
     const s = calcStepStats(stepReadings);
+    const displacements = Object.fromEntries(COMPARATORS.map((key) => [
+      key,
+      s.comparatorValues[key] !== null && baseline[key] !== null
+        ? round(baseline[key] - s.comparatorValues[key], 3)
+        : null,
+    ]));
+    const measured = Object.values(displacements).filter((v) => v !== null);
+    const meanSettlement = measured.length
+      ? round(measured.reduce((sum, v) => sum + v, 0) / measured.length, 3)
+      : null;
 
     const targetLoad = round(baseLoad * step.factor, 2);
     const pressure =
@@ -125,12 +136,13 @@ export function buildRows({
       stepNo: index + 1,
       readings: stepReadings,
       comparatorStats: s.comparatorStats,
-      comparatorValues: s.comparatorValues,
-      reading: s.mean,
-      meanSettlement: s.mean,
-      maxSettlement: s.max,
-      minSettlement: s.min,
-      comparatorDelta: s.delta,
+      comparatorValues: displacements,
+      rawComparatorValues: s.comparatorValues,
+      reading: meanSettlement,
+      meanSettlement,
+      maxSettlement: measured.length ? round(Math.max(...measured), 3) : null,
+      minSettlement: measured.length ? round(Math.min(...measured), 3) : null,
+      comparatorDelta: measured.length ? round(Math.max(...measured) - Math.min(...measured), 3) : null,
       measuredCount: s.measuredCount,
       stableComparators: s.stableComparators,
       targetLoad,
