@@ -22,9 +22,9 @@ function Tip({ active, payload }) {
       <br />
       Pressione {fmt(p.pressure, 2)} bar
       <br />
-      Cedimento {fmt(p.x, 3)} mm
+      Cedimento {fmt(p.y, 3)} mm
       <br />
-      Carico {fmt(p.y, 2)} kN
+      Carico {fmt(p.x, 2)} kN
     </div>
   );
 }
@@ -32,32 +32,34 @@ function Tip({ active, payload }) {
 export function LoadDisplacementChart({ result }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <ScatterChart margin={{ top: 10, right: 18, bottom: 24, left: 8 }}>
+      <ScatterChart margin={{ top: 38, right: 18, bottom: 8, left: 20 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
 
         <XAxis
           type="number"
           dataKey="x"
-          name="Cedimento"
-          unit=" mm"
+          name="Carico"
+          unit=" kN"
+          orientation="top"
           stroke={T.textMuted}
           domain={[0, "dataMax"]}
           label={{
-            value: "Cedimento [mm]",
-            position: "insideBottom",
-            offset: -12,
+            value: "Carico [kN]",
+            position: "insideTop",
+            offset: -24,
           }}
         />
 
         <YAxis
           type="number"
           dataKey="y"
-          name="Carico"
-          unit=" kN"
+          name="Cedimento"
+          unit=" mm"
+          reversed
           stroke={T.textMuted}
           domain={[0, "dataMax"]}
           label={{
-            value: "Carico [kN]",
+            value: "Spostamento [mm]",
             angle: -90,
             position: "insideLeft",
           }}
@@ -132,7 +134,7 @@ export function Results({ result, data, chartRef }) {
         <div className="chart-title">
           <b>Grafico carico / cedimento</b>
           <span>
-            Asse X = cedimento dei comparatori, asse Y = carico del gradino.
+            Asse X = carico del gradino [kN], asse Y = spostamento dei comparatori [mm], crescente verso il basso.
             Il grafico parte da origine 0.
           </span>
         </div>
