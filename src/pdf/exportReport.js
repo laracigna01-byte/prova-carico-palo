@@ -96,7 +96,7 @@ function drawFooter(pdf, ML, PW, PH) {
   pdf.setFontSize(5.2);
   pdf.setTextColor(100, 100, 100);
   pdf.text(`Minuta di prova - ${NORME.uni} - ${NORME.dm}`, ML, PH - 4);
-  pdf.text("Pagina 1/1", PW - ML, PH - 4, { align: "right" });
+  pdf.text(`Pagina ${pdf.getCurrentPageInfo().pageNumber}/${pdf.getNumberOfPages()}`, PW - ML, PH - 4, { align: "right" });
 }
 
 function drawPdfChart(pdf, rows, x, y, w, h) {
@@ -225,7 +225,7 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
   ];
 
   const allPoints = series.flatMap((s) => s.points || []).filter(
-    (p) => Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y))
+    (p) => p.x !== null && p.y !== null && Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y))
   );
 
   if (!allPoints.length) {
@@ -486,7 +486,12 @@ ry = addWrapped(
 
 ry += 3;
 
-  const chartY = Math.max(ly, ry) + 4;
+  // Una minuta con 31 rilievi non deve comprimere grafico e firma fuori pagina.
+  let chartY = Math.max(ly, ry) + 4;
+  if (chartY + 5.5 + 52 + 4 + 31 > PH - 10) {
+    pdf.addPage();
+    chartY = 17;
+  }
 
   drawSection(pdf, ML, chartY, CW, "CURVA CARICO - SPOSTAMENTO");
 
@@ -512,7 +517,10 @@ ry += 3;
     pdf.text("Firma", firmaX + 2, fy + 23);
   }
 
-drawFooter(pdf, ML, PW, PH);
+for (let page = 1; page <= pdf.getNumberOfPages(); page++) {
+  pdf.setPage(page);
+  drawFooter(pdf, ML, PW, PH);
+}
 
   const name = cleanFileName(`Minuta_prova_palo_${data.pileId || data.reportId || "report"}.pdf`);
   const blob = pdf.output("blob");
