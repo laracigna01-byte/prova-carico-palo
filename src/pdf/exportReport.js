@@ -235,33 +235,38 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
     return;
   }
 
-  const plotX = x + 13;
-  const plotY = y + 11;
-  const plotW = w - 22;
-  const plotH = h - 20;
+  const plotX = x + 17;
+  const plotY = y + 16;
+  const plotW = w - 27;
+  const plotH = h - 21;
   const maxX = Math.max(...allPoints.map((p) => Number(p.x)), 1);
   const maxY = Math.max(...allPoints.map((p) => Number(p.y)), 1);
 
   pdf.setDrawColor(80, 80, 80);
-  pdf.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
+  pdf.line(plotX, plotY, plotX + plotW, plotY);
   pdf.line(plotX, plotY, plotX, plotY + plotH);
 
-  pdf.setDrawColor(220, 220, 220);
-  for (let i = 1; i <= 4; i++) {
-    const gy = plotY + (plotH / 5) * i;
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(4.3);
+  for (let i = 0; i <= 5; i++) {
     const gx = plotX + (plotW / 5) * i;
-    pdf.line(plotX, gy, plotX + plotW, gy);
-    pdf.line(gx, plotY, gx, plotY + plotH);
+    const gy = plotY + (plotH / 5) * i;
+    pdf.setDrawColor(220, 220, 220);
+    if (i > 0) {
+      pdf.line(gx, plotY, gx, plotY + plotH);
+      pdf.line(plotX, gy, plotX + plotW, gy);
+    }
+    pdf.setTextColor(70, 70, 70);
+    pdf.text(fmt((maxX / 5) * i, 1), gx, plotY - 1.2, { align: "center" });
+    pdf.text(fmt((maxY / 5) * i, 2), plotX - 1.5, gy + 0.8, { align: "right" });
   }
 
-  pdf.setFont("helvetica", "normal");
   pdf.setFontSize(4.7);
-  pdf.setTextColor(70, 70, 70);
-  pdf.text("Cedimento [mm]", plotX + plotW / 2, y + h - 3.2, { align: "center" });
-  pdf.text("Carico [kN]", x + 4.4, plotY + plotH / 2, { angle: 90 });
+  pdf.text("Carico [kN]", plotX + plotW / 2, y + 8.4, { align: "center" });
+  pdf.text("Spostamento [mm]", x + 3.8, plotY + plotH / 2, { angle: 90 });
 
   function px(p) { return plotX + (Number(p.x) / maxX) * plotW; }
-  function py(p) { return plotY + plotH - (Number(p.y) / maxY) * plotH; }
+  function py(p) { return plotY + (Number(p.y) / maxY) * plotH; }
 
   series.forEach((serie, index) => {
     const points = (serie.points || []).filter((p) => Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y)));
@@ -280,11 +285,6 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
     pdf.text(serie.name, plotX + plotW - 18, plotY + 4 + index * 4);
   });
 
-  pdf.setFontSize(4.4);
-  pdf.setTextColor(80, 80, 80);
-  pdf.text("0", plotX - 1.2, plotY + plotH + 2.8, { align: "right" });
-  pdf.text(fmt(maxX, 2), plotX + plotW, plotY + plotH + 2.8, { align: "right" });
-  pdf.text(fmt(maxY, 1), plotX - 1.2, plotY + 1.2, { align: "right" });
 }
 
 export async function exportReport({ data, result, photo = null, preview = false }) {
