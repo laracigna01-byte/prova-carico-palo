@@ -145,7 +145,8 @@ export function Results({ result, data, chartRef }) {
         <div className="chart-title">
           <b>Grafico carico / cedimento</b>
           <span>
-            Asse X = carico [kN], asse Y = spostamento medio [mm], crescente verso il basso.\n            I cicli sono separati come nella minuta.
+            Asse X = carico [kN], asse Y = spostamento medio [mm], crescente verso il basso.
+            I cicli sono separati come nella minuta.
           </span>
         </div>
 
@@ -208,7 +209,8 @@ export function Results({ result, data, chartRef }) {
       <div className="note">
         <b>Nota tecnica:</b> la pressione viene calcolata automaticamente con
         la proporzione: portata del martinetto : 700 bar = carico del gradino :
-        x. Le letture dei 3 comparatori sono manuali; il grafico principale utilizza lo spostamento medio delle letture disponibili;\n        le letture successive sono facoltative.
+        x. Le letture dei 3 comparatori sono manuali; il grafico principale utilizza lo spostamento medio delle letture disponibili;
+        le letture successive sono facoltative.
       </div>
     </div>
   );
