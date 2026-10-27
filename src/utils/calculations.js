@@ -282,7 +282,7 @@ export function validateTest({ data, result, photo }) {
   if (!data.jackCapacityTon || Number(data.jackCapacityTon) <= 0) errors.push("Portata martinetto mancante");
   if (result.exceedsJackCapacity) errors.push("Il carico massimo supera la portata nominale del martinetto");
   if (result.measuredCount === 0) errors.push("Inserire almeno una lettura dei comparatori");
-  if (!photo) errors.push("Foto/schema della prova mancante");
+  if (!(Array.isArray(photo) ? photo.length : photo?.dataUrl)) errors.push("Foto/schema della prova mancante");
   if (!data.tecnico) errors.push("Tecnico esecutore mancante");
 
   return errors;
