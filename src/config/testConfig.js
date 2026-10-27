@@ -62,7 +62,7 @@ export const DEFAULT_PROJECT = {
   reinforcement: "",
   exerciseLoad: "",
   testLoad: "",
-  jackId: "30",
+  jackId: "",
   jackCapacityTon: 30,
   manometerId: "700",
   loadCellId: "",
