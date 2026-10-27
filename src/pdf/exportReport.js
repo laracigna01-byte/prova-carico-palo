@@ -250,16 +250,23 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(4.3);
   for (let i = 0; i <= 5; i++) {
-    const gx = plotX + (plotW / 5) * i;
     const gy = plotY + (plotH / 5) * i;
     pdf.setDrawColor(220, 220, 220);
     if (i > 0) {
-      pdf.line(gx, plotY, gx, plotY + plotH);
       pdf.line(plotX, gy, plotX + plotW, gy);
     }
     pdf.setTextColor(70, 70, 70);
-    pdf.text(fmt((maxX / 5) * i, 0), gx, plotY - 1.2, { align: "center" });
     pdf.text(fmt((maxY / 5) * i, 2), plotX - 1.5, gy + 0.8, { align: "right" });
+  }
+
+  for (let i = 0; i <= Math.round(maxX / xStep); i++) {
+    const gx = plotX + (i * xStep / maxX) * plotW;
+    if (i > 0) {
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(gx, plotY, gx, plotY + plotH);
+    }
+    pdf.setTextColor(70, 70, 70);
+    pdf.text(fmt(i * xStep, 0), gx, plotY - 1.2, { align: "center" });
   }
 
   pdf.setFontSize(4.7);
