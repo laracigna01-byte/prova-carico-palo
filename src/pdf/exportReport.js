@@ -58,12 +58,12 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(4.5);
   pdf.setTextColor(90, 90, 90);
-  pdf.text(label, x + 1, y + 2.3);
+  pdf.text(label, x + 0.8, y + 1.8, { maxWidth: w - 1.6 });
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.4);
+  pdf.setFontSize(4.8);
   pdf.setTextColor(10, 10, 10);
-  pdf.text(safeText(value, "—"), x + 1, y + 5.1, { maxWidth: w - 2 });
+  pdf.text(safeText(value, "—"), x + 0.8, y + 4.0, { maxWidth: w - 1.6 });
 }
 
 function addContainedImage(pdf, dataUrl, type, boxX, boxY, boxW, boxH) {
