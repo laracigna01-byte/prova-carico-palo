@@ -353,7 +353,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   let ly = y;
   let ry = y;
 
-  const h = 6.2;
+  const h = 5.0;
   const w3 = leftW / 3;
   const w4 = leftW / 4;
 
@@ -397,9 +397,9 @@ export async function exportReport({ data, result, photo = null, preview = false
   ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
 
   const colW = [7, 28, 18, 22, 22, 19];
-  const headerH = 5.4;
+  const headerH = 4.6;
   const rows = result.rows || [];
-  const rowH = 5.2;
+  const rowH = 4.1;
 
   pdf.setFillColor(245, 245, 245);
   pdf.rect(leftX, ly, leftW, headerH, "F");
@@ -417,15 +417,15 @@ export async function exportReport({ data, result, photo = null, preview = false
   ly += headerH;
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.4);
+  pdf.setFontSize(4.8);
 
   rows.forEach((r) => {
     pdf.setDrawColor(215, 215, 215);
     pdf.rect(leftX, ly, leftW, rowH);
 
     tx = leftX;
-    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.reading, 2)].forEach((value, i) => {
-      pdf.text(String(value), tx + 1.1, ly + 3.5, { maxWidth: colW[i] - 2.2 });
+    [r.stepNo, r.cycleLabel, `${r.unload ? "S" : ""}${r.percent}% ${r.waitMinutes || 0}m`, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.reading, 3)].forEach((value, i) => {
+      pdf.text(String(value), tx + 0.8, ly + 2.8, { maxWidth: colW[i] - 1.6 });
       tx += colW[i];
     });
 
