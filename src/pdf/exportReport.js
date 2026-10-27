@@ -216,12 +216,11 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(5.8);
   pdf.setTextColor(20, 20, 20);
-  pdf.text("Curva carico applicato - cedimento comparatori", x + 2, y + 4);
+  pdf.text("Curve carico - spostamento medio", x + 2, y + 4);
 
   const series = [
-    { name: "C1", points: result.chartC1 || [], color: [52, 107, 180] },
-    { name: "C2", points: result.chartC2 || [], color: [46, 160, 67] },
-    { name: "C3", points: result.chartC3 || [], color: [240, 136, 62] },
+    { name: "Esercizio", points: result.chartExercise || [], color: [52, 107, 180] },
+    { name: "Collaudo", points: result.chartTest || [], color: [46, 160, 67] },
   ];
 
   const allPoints = series.flatMap((s) => s.points || []).filter(
