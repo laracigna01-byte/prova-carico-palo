@@ -490,17 +490,32 @@ export async function exportReport({ data, result, photo = null, preview = false
   const margin = 10;
   const gap = 6;
   const boxW = (PW - margin * 2 - gap) / 2;
-  const initialHeight = Math.max(42, Math.min(66, 278 - sy));
-  drawPhotoBox(photos[0] || null, 0, margin, sy, boxW, initialHeight);
-  if (photos.length > 1) drawPhotoBox(photos[1], 1, margin + boxW + gap, sy, boxW, initialHeight);
-  const rest = photos.slice(2);
-  for (let offset = 0; offset < rest.length; offset += 6) {
+  // Pagina 2: fino a quattro foto in una griglia 2 x 2 sotto il grafico.
+  // La dimensione si adatta allo spazio residuo prima del piè di pagina.
+  const photoRows = photos.length > 2 ? 2 : 1;
+  const photoGap = 5;
+  const availableHeight = 283 - sy;
+  const photoBoxHeight = Math.min(66, (availableHeight - photoGap * (photoRows - 1)) / photoRows);
+  const firstPagePhotos = photos.slice(0, 4);
+  if (firstPagePhotos.length === 0) {
+    drawPhotoBox(null, 0, margin, sy, boxW, Math.min(66, availableHeight));
+  } else {
+    firstPagePhotos.forEach((item, index) => {
+      const x = margin + (index % 2) * (boxW + gap);
+      const top = sy + Math.floor(index / 2) * (photoBoxHeight + photoGap);
+      drawPhotoBox(item, index, x, top, boxW, photoBoxHeight);
+    });
+  }
+
+  // Pagina 3: foto 5–10, due colonne per tre righe.
+  const remainingPhotos = photos.slice(4);
+  if (remainingPhotos.length) {
     pdf.addPage();
-    let top = drawSection(pdf, ML, 11, CW, "DOCUMENTAZIONE FOTOGRAFICA - " + safeText(data.pileId, "Prova palo"));
-    rest.slice(offset, offset + 6).forEach((item, j) => {
-      const x = margin + (j % 2) * (boxW + gap);
-      const py = top + Math.floor(j / 2) * 83;
-      drawPhotoBox(item, offset + j + 2, x, py, boxW, 76);
+    const top = drawSection(pdf, ML, 11, CW, "DOCUMENTAZIONE FOTOGRAFICA - " + safeText(data.pileId, "Prova palo"));
+    remainingPhotos.forEach((item, index) => {
+      const x = margin + (index % 2) * (boxW + gap);
+      const py = top + Math.floor(index / 2) * 83;
+      drawPhotoBox(item, index + 4, x, py, boxW, 76);
     });
   }
   for (let page = 1; page <= pdf.getNumberOfPages(); page++) {
