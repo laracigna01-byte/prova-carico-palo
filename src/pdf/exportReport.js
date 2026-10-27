@@ -63,7 +63,7 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(4.8);
   pdf.setTextColor(10, 10, 10);
-  pdf.text(safeText(value, "—"), x + 0.8, y + 4.0, { maxWidth: w - 1.6 });
+  pdf.text(safeText(value, "—"), x + 0.8, y + 4.4, { maxWidth: w - 1.6 });
 }
 
 function addContainedImage(pdf, dataUrl, type, boxX, boxY, boxW, boxH) {
@@ -234,10 +234,10 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
     return;
   }
 
-  const plotX = x + 17;
+  const plotX = x + 14;
   const plotY = y + 16;
-  const plotW = w - 27;
-  const plotH = h - 21;
+  const plotW = w - 19;
+  const plotH = h - 23;
   const dataMaxX = Math.max(...allPoints.map((p) => Number(p.x)), 1);
   const xStep = dataMaxX <= 5000 ? 1000 : dataMaxX <= 10000 ? 2000 : 5000;
   const maxX = Math.ceil(dataMaxX / xStep) * xStep;
@@ -290,7 +290,7 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
     });
     pdf.setFontSize(4.6);
     pdf.setTextColor(...serie.color);
-    pdf.text(serie.name, plotX + plotW - 18, plotY + 4 + index * 4);
+    pdf.text(serie.name, plotX + plotW - 1, plotY + 4 + index * 4, { align: "right" });
   });
 
 }
@@ -353,7 +353,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   let ly = y;
   let ry = y;
 
-  const h = 5.0;
+  const h = 5.6;
   const w3 = leftW / 3;
   const w4 = leftW / 4;
 
@@ -384,7 +384,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   ly += h;
 
   drawCompactCell(pdf, leftX, ly, w4, h, "Diametro", `${safeText(data.diameter, "—")} mm`);
-  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", `${safeText(data.jackId, "—")} (${safeText(data.jackCapacityTon, "30")} t)`);
+  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", `${safeText(data.jackId, "—")} / ${safeText(data.jackCapacityTon, "30")} t`);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Comparatori", data.comparatorId);
   ly += h;
