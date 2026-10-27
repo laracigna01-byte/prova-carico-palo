@@ -229,6 +229,22 @@ export function calcPalo({
   const chartC2 = buildComparatorSeries("c2", "Comparatore 2");
   const chartC3 = buildComparatorSeries("c3", "Comparatore 3");
 
+  const meanPoint = (r) => ({
+    x: r.load,
+    y: r.meanSettlement,
+    pressure: r.pressure,
+    name: r.cycleLabel + " " + r.label,
+    phase: r.phase,
+    unload: r.unload,
+  });
+  const chartExercise = rows.filter((r) =>
+    (r.cycle === "esercizio" || r.cycle === "scarico_esercizio") && r.meanSettlement !== null
+  ).map(meanPoint);
+  const chartTest = rows.filter((r) =>
+    (r.cycle === "collaudo" || r.cycle === "scarico_collaudo") && r.meanSettlement !== null
+  ).map(meanPoint);
+
+
   return {
     rows,
     max,
@@ -243,6 +259,8 @@ export function calcPalo({
     chartC1,
     chartC2,
     chartC3,
+    chartExercise,
+    chartTest,
     chartAll: [...chartC1, ...chartC2, ...chartC3],
     pressureReferenceLoadKn: jackCapacityKn,
     jackCapacityTon: toNumber(jackCapacityTon, 30),
