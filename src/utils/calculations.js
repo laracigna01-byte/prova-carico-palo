@@ -1,4 +1,4 @@
-import { toNumber, round } from "./formatters";
+import { toNumber, round } from "./formatters.js";
 
 const COMPARATORS = ["c1", "c2", "c3"];
 const READINGS_PER_COMPARATOR = 9;
@@ -41,19 +41,16 @@ function calcComparator(values) {
     .filter((v) => v !== null);
 
   const firstThree = nums.slice(0, 3);
-
-  const stable =
-    firstThree.length === 3 &&
+  const stable = firstThree.length === 3 &&
     Math.max(...firstThree) - Math.min(...firstThree) <= 0.02;
 
   return {
-  values: list,
-  count: nums.length,
-  stable,
-  value: stable
-    ? round(firstThree.reduce((sum, v) => sum + v, 0) / 3, 3)
-    : null,
-};
+    values: list,
+    count: nums.length,
+    stable,
+    // L'ultima lettura disponibile rappresenta la misura del gradino.
+    value: nums.length ? round(nums[nums.length - 1], 3) : null,
+  };
 }
 
 function calcStepStats(readings) {
@@ -110,9 +107,22 @@ export function buildRows({
   const jackCapacityKn = round(toNumber(jackCapacityTon, 30) * toNumber(tonToKn, DEFAULT_TON_TO_KN), 2);
   const referenceBar = toNumber(pressureReferenceBar, DEFAULT_PRESSURE_BAR);
 
+  const baselineReadings = normalizeReadings(readings?.[loadSteps[0]?.key]);
+  const baseline = calcStepStats(baselineReadings).comparatorValues;
+
   return loadSteps.map((step, index) => {
     const stepReadings = normalizeReadings(readings?.[step.key]);
     const s = calcStepStats(stepReadings);
+    const displacements = Object.fromEntries(COMPARATORS.map((key) => [
+      key,
+      s.comparatorValues[key] !== null && baseline[key] !== null
+        ? round(baseline[key] - s.comparatorValues[key], 3)
+        : null,
+    ]));
+    const measured = Object.values(displacements).filter((v) => v !== null);
+    const meanSettlement = measured.length
+      ? round(measured.reduce((sum, v) => sum + v, 0) / measured.length, 3)
+      : null;
 
     const targetLoad = round(baseLoad * step.factor, 2);
     const pressure =
@@ -125,12 +135,13 @@ export function buildRows({
       stepNo: index + 1,
       readings: stepReadings,
       comparatorStats: s.comparatorStats,
-      comparatorValues: s.comparatorValues,
-      reading: s.mean,
-      meanSettlement: s.mean,
-      maxSettlement: s.max,
-      minSettlement: s.min,
-      comparatorDelta: s.delta,
+      comparatorValues: displacements,
+      rawComparatorValues: s.comparatorValues,
+      reading: meanSettlement,
+      meanSettlement,
+      maxSettlement: measured.length ? round(Math.max(...measured), 3) : null,
+      minSettlement: measured.length ? round(Math.min(...measured), 3) : null,
+      comparatorDelta: measured.length ? round(Math.max(...measured) - Math.min(...measured), 3) : null,
       measuredCount: s.measuredCount,
       stableComparators: s.stableComparators,
       targetLoad,
@@ -180,8 +191,8 @@ export function calcPalo({
       : null;
 
   const chartPoint = (r, comparatorKey, comparatorLabel) => ({
-    x: r.comparatorValues?.[comparatorKey],
-    y: r.load,
+    x: r.load,
+    y: r.comparatorValues?.[comparatorKey],
     pressure: r.pressure,
     targetLoad: r.targetLoad,
     name: `${comparatorLabel} - ${r.cycleLabel} ${r.label}`,
@@ -218,6 +229,23 @@ export function calcPalo({
   const chartC2 = buildComparatorSeries("c2", "Comparatore 2");
   const chartC3 = buildComparatorSeries("c3", "Comparatore 3");
 
+  const meanPoint = (r) => ({
+    x: round(r.load * 100, 2),
+    y: r.meanSettlement,
+    pressure: r.pressure,
+    name: r.cycleLabel + " " + r.label,
+    phase: r.phase,
+    unload: r.unload,
+  });
+  const chartExercise = rows.filter((r) =>
+    (r.cycle === "esercizio" || r.cycle === "scarico_esercizio") && r.meanSettlement !== null
+  ).map(meanPoint);
+  const chartTest = [
+    ...rows.filter((r) => r.cycle === "scarico_esercizio" && r.percent === 0).slice(-2),
+    ...rows.filter((r) => r.cycle === "collaudo" || r.cycle === "scarico_collaudo"),
+  ].filter((r) => r.meanSettlement !== null).map(meanPoint);
+
+
   return {
     rows,
     max,
@@ -232,6 +260,8 @@ export function calcPalo({
     chartC1,
     chartC2,
     chartC3,
+    chartExercise,
+    chartTest,
     chartAll: [...chartC1, ...chartC2, ...chartC3],
     pressureReferenceLoadKn: jackCapacityKn,
     jackCapacityTon: toNumber(jackCapacityTon, 30),

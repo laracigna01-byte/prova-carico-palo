@@ -12,7 +12,7 @@ import { T } from "../config/theme";
 import { ResultCard } from "./Inputs";
 import { fmt } from "../utils/formatters";
 
-function Tip({ active, payload }) {
+function Tip({ active, payload, compare = false }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
 
@@ -22,50 +22,61 @@ function Tip({ active, payload }) {
       <br />
       Pressione {fmt(p.pressure, 2)} bar
       <br />
-      Cedimento {fmt(p.x, 3)} mm
+      Cedimento {fmt(p.y, 3)} mm
       <br />
-      Carico {fmt(p.y, 2)} kN
+      Carico {fmt(p.x, 2)} {compare ? "kN" : "daN"}
     </div>
   );
 }
 
-export function LoadDisplacementChart({ result }) {
+export function LoadDisplacementChart({ result, compare = false }) {
+  const points = compare ? (result.chartAll || []) : [...(result.chartExercise || []), ...(result.chartTest || [])];
+  const maxLoad = Math.max(0, ...points.map(p => Number(p.x) || 0));
+  const step = maxLoad <= 5000 ? 1000 : maxLoad <= 10000 ? 2000 : 5000;
+  const axisMax = Math.max(step, Math.ceil(maxLoad / step) * step);
+  const ticks = Array.from({ length: Math.round(axisMax / step) + 1 }, (_, i) => i * step);
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <ScatterChart margin={{ top: 10, right: 18, bottom: 24, left: 8 }}>
+      <ScatterChart margin={{ top: 38, right: 18, bottom: 8, left: 20 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
 
         <XAxis
           type="number"
           dataKey="x"
-          name="Cedimento"
-          unit=" mm"
+          name="Carico"
+          unit={compare ? " kN" : " daN"}
+          orientation="top"
           stroke={T.textMuted}
-          domain={[0, "dataMax"]}
+          domain={[0, axisMax]}
+          ticks={ticks}
+          allowDecimals={false}
           label={{
-            value: "Cedimento [mm]",
-            position: "insideBottom",
-            offset: -12,
+            value: compare ? "Carico [kN]" : "Carico [daN]",
+            position: "insideTop",
+            offset: -24,
           }}
         />
 
         <YAxis
           type="number"
           dataKey="y"
-          name="Carico"
-          unit=" kN"
+          name="Cedimento"
+          unit=" mm"
+          reversed
           stroke={T.textMuted}
           domain={[0, "dataMax"]}
           label={{
-            value: "Carico [kN]",
+            value: "Spostamento [mm]",
             angle: -90,
             position: "insideLeft",
           }}
         />
 
-        <Tooltip content={<Tip />} />
+        <Tooltip content={<Tip compare={compare} />} />
         <Legend />
 
+        {compare ? (
+          <>
         <Scatter
           name="Comparatore 1"
           data={result.chartC1 || []}
@@ -86,6 +97,15 @@ export function LoadDisplacementChart({ result }) {
           line={{ stroke: T.accentOrange, strokeWidth: 2 }}
           fill={T.accentOrange}
         />
+          </>
+        ) : (
+          <>
+            <Scatter name="Ciclo di esercizio" data={result.chartExercise || []}
+              line={{ stroke: T.cycle1, strokeWidth: 2 }} fill={T.cycle1} />
+            <Scatter name="Ciclo di collaudo" data={result.chartTest || []}
+              line={{ stroke: T.cycle2, strokeWidth: 2 }} fill={T.cycle2} />
+          </>
+        )}
       </ScatterChart>
     </ResponsiveContainer>
   );
@@ -132,12 +152,12 @@ export function Results({ result, data, chartRef }) {
         <div className="chart-title">
           <b>Grafico carico / cedimento</b>
           <span>
-            Asse X = cedimento dei comparatori, asse Y = carico del gradino.
-            Il grafico parte da origine 0.
+            Asse X = carico [daN], asse Y = spostamento medio [mm], crescente verso il basso.
+            I cicli sono separati come nella minuta.
           </span>
         </div>
 
-        {result.chartAll?.length ? (
+        {(result.chartExercise?.length || result.chartTest?.length) ? (
           <div className="chart">
             <LoadDisplacementChart result={result} />
           </div>
@@ -147,6 +167,15 @@ export function Results({ result, data, chartRef }) {
           </div>
         )}
       </div>
+
+      {result.chartAll?.length > 0 && (
+        <details className="chart-box">
+          <summary>Controllo tecnico: singoli comparatori</summary>
+          <div className="chart" style={{ minHeight: 320 }}>
+            <LoadDisplacementChart result={result} compare />
+          </div>
+        </details>
+      )}
 
       <div className="table-box">
         <div className="table-title">
@@ -187,9 +216,8 @@ export function Results({ result, data, chartRef }) {
       <div className="note">
         <b>Nota tecnica:</b> la pressione viene calcolata automaticamente con
         la proporzione: portata del martinetto : 700 bar = carico del gradino :
-        x. Le letture dei 3 comparatori sono manuali; il grafico utilizza le
-        letture disponibili e considera stabile ogni comparatore quando le
-        prime 3 letture sono coerenti.
+        x. Le letture dei 3 comparatori sono manuali; il grafico principale utilizza lo spostamento medio delle letture disponibili;
+        le letture successive sono facoltative.
       </div>
     </div>
   );

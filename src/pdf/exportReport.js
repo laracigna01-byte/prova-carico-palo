@@ -58,12 +58,19 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(4.5);
   pdf.setTextColor(90, 90, 90);
-  pdf.text(label, x + 1, y + 2.3);
+  pdf.text(label, x + 0.8, y + 1.8, { maxWidth: w - 1.6 });
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.4);
+  pdf.setFontSize(4.8);
   pdf.setTextColor(10, 10, 10);
-  pdf.text(safeText(value, "—"), x + 1, y + 5.1, { maxWidth: w - 2 });
+  pdf.text(safeText(value, "—"), x + 0.8, y + 4.4, { maxWidth: w - 1.6 });
+}
+
+function pdfLoadKn(value) {
+  const n = Number(String(value ?? "").replace(",", "."));
+  return value !== "" && value != null && Number.isFinite(n)
+    ? n.toFixed(2).replace(".", ",") + " kN"
+    : "—";
 }
 
 function addContainedImage(pdf, dataUrl, type, boxX, boxY, boxW, boxH) {
@@ -96,7 +103,7 @@ function drawFooter(pdf, ML, PW, PH) {
   pdf.setFontSize(5.2);
   pdf.setTextColor(100, 100, 100);
   pdf.text(`Minuta di prova - ${NORME.uni} - ${NORME.dm}`, ML, PH - 4);
-  pdf.text("Pagina 1/1", PW - ML, PH - 4, { align: "right" });
+  pdf.text(`Pagina ${pdf.getCurrentPageInfo().pageNumber}/${pdf.getNumberOfPages()}`, PW - ML, PH - 4, { align: "right" });
 }
 
 function drawPdfChart(pdf, rows, x, y, w, h) {
@@ -216,16 +223,15 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(5.8);
   pdf.setTextColor(20, 20, 20);
-  pdf.text("Curva carico applicato - cedimento comparatori", x + 2, y + 4);
+  pdf.text("Curve carico - spostamento medio", x + 2, y + 4);
 
   const series = [
-    { name: "C1", points: result.chartC1 || [], color: [52, 107, 180] },
-    { name: "C2", points: result.chartC2 || [], color: [46, 160, 67] },
-    { name: "C3", points: result.chartC3 || [], color: [240, 136, 62] },
+    { name: "Esercizio", points: result.chartExercise || [], color: [52, 107, 180] },
+    { name: "Collaudo", points: result.chartTest || [], color: [46, 160, 67] },
   ];
 
   const allPoints = series.flatMap((s) => s.points || []).filter(
-    (p) => Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y))
+    (p) => p.x !== null && p.y !== null && Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y))
   );
 
   if (!allPoints.length) {
@@ -235,33 +241,47 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
     return;
   }
 
-  const plotX = x + 13;
-  const plotY = y + 11;
-  const plotW = w - 22;
-  const plotH = h - 20;
-  const maxX = Math.max(...allPoints.map((p) => Number(p.x)), 1);
+  const plotX = x + 14;
+  const plotY = y + 16;
+  const plotW = w - 19;
+  const plotH = h - 23;
+  const dataMaxX = Math.max(...allPoints.map((p) => Number(p.x)), 1);
+  const xStep = dataMaxX <= 5000 ? 1000 : dataMaxX <= 10000 ? 2000 : 5000;
+  const maxX = Math.ceil(dataMaxX / xStep) * xStep;
   const maxY = Math.max(...allPoints.map((p) => Number(p.y)), 1);
 
   pdf.setDrawColor(80, 80, 80);
-  pdf.line(plotX, plotY + plotH, plotX + plotW, plotY + plotH);
+  pdf.line(plotX, plotY, plotX + plotW, plotY);
   pdf.line(plotX, plotY, plotX, plotY + plotH);
 
-  pdf.setDrawColor(220, 220, 220);
-  for (let i = 1; i <= 4; i++) {
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(4.3);
+  for (let i = 0; i <= 5; i++) {
     const gy = plotY + (plotH / 5) * i;
-    const gx = plotX + (plotW / 5) * i;
-    pdf.line(plotX, gy, plotX + plotW, gy);
-    pdf.line(gx, plotY, gx, plotY + plotH);
+    pdf.setDrawColor(220, 220, 220);
+    if (i > 0) {
+      pdf.line(plotX, gy, plotX + plotW, gy);
+    }
+    pdf.setTextColor(70, 70, 70);
+    pdf.text(fmt((maxY / 5) * i, 2), plotX - 1.5, gy + 0.8, { align: "right" });
   }
 
-  pdf.setFont("helvetica", "normal");
+  for (let i = 0; i <= Math.round(maxX / xStep); i++) {
+    const gx = plotX + (i * xStep / maxX) * plotW;
+    if (i > 0) {
+      pdf.setDrawColor(220, 220, 220);
+      pdf.line(gx, plotY, gx, plotY + plotH);
+    }
+    pdf.setTextColor(70, 70, 70);
+    pdf.text(fmt(i * xStep, 0), gx, plotY - 1.2, { align: "center" });
+  }
+
   pdf.setFontSize(4.7);
-  pdf.setTextColor(70, 70, 70);
-  pdf.text("Cedimento [mm]", plotX + plotW / 2, y + h - 3.2, { align: "center" });
-  pdf.text("Carico [kN]", x + 4.4, plotY + plotH / 2, { angle: 90 });
+  pdf.text("Carico [daN]", plotX + plotW / 2, y + 8.4, { align: "center" });
+  pdf.text("Spostamento [mm]", x + 3.8, plotY + plotH / 2, { angle: 90 });
 
   function px(p) { return plotX + (Number(p.x) / maxX) * plotW; }
-  function py(p) { return plotY + plotH - (Number(p.y) / maxY) * plotH; }
+  function py(p) { return plotY + (Number(p.y) / maxY) * plotH; }
 
   series.forEach((serie, index) => {
     const points = (serie.points || []).filter((p) => Number.isFinite(Number(p.x)) && Number.isFinite(Number(p.y)));
@@ -277,14 +297,9 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
     });
     pdf.setFontSize(4.6);
     pdf.setTextColor(...serie.color);
-    pdf.text(serie.name, plotX + plotW - 18, plotY + 4 + index * 4);
+    pdf.text(serie.name, plotX + plotW - 1, plotY + 4 + index * 4, { align: "right" });
   });
 
-  pdf.setFontSize(4.4);
-  pdf.setTextColor(80, 80, 80);
-  pdf.text("0", plotX - 1.2, plotY + plotH + 2.8, { align: "right" });
-  pdf.text(fmt(maxX, 2), plotX + plotW, plotY + plotH + 2.8, { align: "right" });
-  pdf.text(fmt(maxY, 1), plotX - 1.2, plotY + 1.2, { align: "right" });
 }
 
 export async function exportReport({ data, result, photo = null, preview = false }) {
@@ -345,7 +360,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   let ly = y;
   let ry = y;
 
-  const h = 6.2;
+  const h = 5.6;
   const w3 = leftW / 3;
   const w4 = leftW / 4;
 
@@ -371,12 +386,12 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   drawCompactCell(pdf, leftX, ly, w4, h, "Identificativo palo", data.pileId);
   drawCompactCell(pdf, leftX + w4, ly, w4, h, "Lunghezza", `${safeText(data.length, "—")} m`);
-  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio", `${safeText(data.exerciseLoad || result.baseLoad, "—")} kN`);
-  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Collaudo 150%", `${safeText(data.testLoad || result.maxTestLoad, "—")} kN`);
+  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio", pdfLoadKn(data.exerciseLoad || result.baseLoad));
+  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Collaudo 150%", pdfLoadKn(data.testLoad || result.maxTestLoad));
   ly += h;
 
   drawCompactCell(pdf, leftX, ly, w4, h, "Diametro", `${safeText(data.diameter, "—")} mm`);
-  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", `${safeText(data.jackId, "—")} (${safeText(data.jackCapacityTon, "30")} t)`);
+  drawCompactCell(pdf, leftX + w4, ly, w4, h, "ID martinetto / portata", `${safeText(data.jackId, "—")} / ${safeText(data.jackCapacityTon, "—")} t`);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Comparatori", data.comparatorId);
   ly += h;
@@ -389,9 +404,9 @@ export async function exportReport({ data, result, photo = null, preview = false
   ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
 
   const colW = [7, 28, 18, 22, 22, 19];
-  const headerH = 5.4;
+  const headerH = 4.6;
   const rows = result.rows || [];
-  const rowH = 5.2;
+  const rowH = 4.1;
 
   pdf.setFillColor(245, 245, 245);
   pdf.rect(leftX, ly, leftW, headerH, "F");
@@ -401,7 +416,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   pdf.setTextColor(20, 20, 20);
 
   let tx = leftX;
-  ["N", "Ciclo", "%", "Press. [bar]", "Carico [kN]", "Ced. medio"].forEach((head, i) => {
+  ["N", "Ciclo", "% / attesa", "Press. [bar]", "Carico [kN]", "Ced. medio"].forEach((head, i) => {
     pdf.text(head, tx + 1.1, ly + 3.7);
     tx += colW[i];
   });
@@ -409,24 +424,28 @@ export async function exportReport({ data, result, photo = null, preview = false
   ly += headerH;
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.4);
+  pdf.setFontSize(4.8);
 
   rows.forEach((r) => {
     pdf.setDrawColor(215, 215, 215);
     pdf.rect(leftX, ly, leftW, rowH);
 
     tx = leftX;
-    [r.stepNo, r.cycleLabel, r.label, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.reading, 2)].forEach((value, i) => {
-      pdf.text(String(value), tx + 1.1, ly + 3.5, { maxWidth: colW[i] - 2.2 });
+    [r.stepNo, r.cycleLabel, `${r.unload ? "S" : ""}${r.percent}% ${r.waitMinutes === 0 ? "iniz." : `${r.waitMinutes} min`}`, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.reading, 3)].forEach((value, i) => {
+      pdf.text(String(value), tx + 0.8, ly + 2.8, { maxWidth: colW[i] - 1.6 });
       tx += colW[i];
     });
 
     ly += rowH;
   });
 
+  ry = drawSection(pdf, rightX, ry, rightW, "CURVA CARICO - SPOSTAMENTO");
+  drawPdfChartComparators(pdf, result, rightX, ry, rightW, 69);
+  ry += 72;
+
   ry = drawSection(pdf, rightX, ry, rightW, "DOCUMENTAZIONE FOTOGRAFICA");
 
-  const photoH = 60;
+  const photoH = 69;
   pdf.setDrawColor(185, 185, 185);
   pdf.rect(rightX, ry, rightW, photoH);
 
@@ -486,19 +505,9 @@ ry = addWrapped(
 
 ry += 3;
 
-  const chartY = Math.max(ly, ry) + 4;
-
-  drawSection(pdf, ML, chartY, CW, "CURVA CARICO - SPOSTAMENTO");
-
-  const chartH = 52;
-  drawPdfChartComparators(pdf, result, ML, chartY + 5.5, CW, chartH);
-
-  const bottomY = chartY + 5.5 + chartH + 4;
-
-  const firmaW = CW;
-  const firmaX = ML;
-
-  let fy = drawSection(pdf, firmaX, bottomY, firmaW, "FIRMA TECNICO INCARICATO");
+  const firmaW = rightW;
+  const firmaX = rightX;
+  const fy = drawSection(pdf, rightX, ry + 3, rightW, "FIRMA TECNICO INCARICATO");
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(5.2);
@@ -512,7 +521,10 @@ ry += 3;
     pdf.text("Firma", firmaX + 2, fy + 23);
   }
 
-drawFooter(pdf, ML, PW, PH);
+for (let page = 1; page <= pdf.getNumberOfPages(); page++) {
+  pdf.setPage(page);
+  drawFooter(pdf, ML, PW, PH);
+}
 
   const name = cleanFileName(`Minuta_prova_palo_${data.pileId || data.reportId || "report"}.pdf`);
   const blob = pdf.output("blob");
