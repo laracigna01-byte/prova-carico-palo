@@ -56,14 +56,14 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.rect(x, y, w, h);
 
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(4.5);
+  pdf.setFontSize(6);
   pdf.setTextColor(90, 90, 90);
-  pdf.text(label, x + 0.8, y + 1.8, { maxWidth: w - 1.6 });
+  pdf.text(label, x + 1, y + 2.6, { maxWidth: w - 1.6 });
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(4.8);
+  pdf.setFontSize(7.2);
   pdf.setTextColor(10, 10, 10);
-  pdf.text(safeText(value, "—"), x + 0.8, y + 4.4, { maxWidth: w - 1.6 });
+  pdf.text(safeText(value, "—"), x + 1, y + 6.35, { maxWidth: w - 1.6 });
 }
 
 function pdfLoadKn(value) {
@@ -352,179 +352,176 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   y += 20.5;
 
+
+  // Pagina 1: dati e tabella a tutta larghezza, senza grafico/fotografie.
   const leftX = ML;
-  const leftW = 116;
-  const rightX = ML + leftW + 5;
-  const rightW = CW - leftW - 5;
-
+  const leftW = CW;
   let ly = y;
-  let ry = y;
-
-  const h = 5.6;
+  const h = 8;
   const w3 = leftW / 3;
   const w4 = leftW / 4;
 
   ly = drawSection(pdf, leftX, ly, leftW, "DATI GENERALI");
-
   drawCompactCell(pdf, leftX, ly, w4, h, "Data inizio", data.dataInizio);
   drawCompactCell(pdf, leftX + w4, ly, w4, h, "Ora inizio", data.oraInizio);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Data fine", data.dataFine);
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Ora fine", data.oraFine);
   ly += h;
-
   drawCompactCell(pdf, leftX, ly, w3, h, "Committente", data.committente);
   drawCompactCell(pdf, leftX + w3, ly, w3, h, "Cantiere", data.cantiere);
   drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Località", data.localita);
   ly += h;
-
   drawCompactCell(pdf, leftX, ly, w3, h, "Direzione lavori", data.direzioneLavori);
   drawCompactCell(pdf, leftX + w3, ly, w3, h, "Impresa", data.impresa);
   drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Riferimento prova", data.reportId || data.pileId);
   ly += h + 2;
 
   ly = drawSection(pdf, leftX, ly, leftW, "DATI DEL PALO");
-
   drawCompactCell(pdf, leftX, ly, w4, h, "Identificativo palo", data.pileId);
-  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Lunghezza", `${safeText(data.length, "—")} m`);
+  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Lunghezza", safeText(data.length, "—") + " m");
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio", pdfLoadKn(data.exerciseLoad || result.baseLoad));
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Collaudo 150%", pdfLoadKn(data.testLoad || result.maxTestLoad));
   ly += h;
-
-  drawCompactCell(pdf, leftX, ly, w4, h, "Diametro", `${safeText(data.diameter, "—")} mm`);
-  drawCompactCell(pdf, leftX + w4, ly, w4, h, "ID martinetto / portata", `${safeText(data.jackId, "—")} / ${safeText(data.jackCapacityTon, "—")} t`);
-  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
-  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Comparatori", data.comparatorId);
+  drawCompactCell(pdf, leftX, ly, w4, h, "Diametro", safeText(data.diameter, "—") + " mm");
+  drawCompactCell(pdf, leftX + w4, ly, w4, h, "ID martinetto", data.jackId);
+  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Portata martinetto", safeText(data.jackCapacityTon, "—") + " t");
+  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
   ly += h;
-
-  drawCompactCell(pdf, leftX, ly, w3, h, "Portata martinetto", `${safeText(data.jackCapacityTon, "30")} t`);
-  drawCompactCell(pdf, leftX + w3, ly, w3, h, "Rif. calcolo", `${safeText(result.pressureReferenceLoadKn, "294,30")} kN / 700 bar`);
-  drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Formula pressione", "bar = kN step x 700 / portata martinetto");
+  drawCompactCell(pdf, leftX, ly, w3, h, "Comparatori", data.comparatorId);
+  drawCompactCell(pdf, leftX + w3, ly, w3, h, "Rif. calcolo", safeText(result.pressureReferenceLoadKn, "—") + " kN / 700 bar");
+  drawCompactCell(pdf, leftX + 2 * w3, ly, w3, h, "Conversione", "1 t = " + safeText(data.tonToKn, "9,81") + " kN");
   ly += h + 2;
 
-  ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA");
-
-  const colW = [7, 28, 18, 22, 22, 19];
-  const headerH = 4.6;
+  ly = drawSection(pdf, leftX, ly, leftW, "TABELLA DI PROVA - LETTURE DEI TRE COMPARATORI");
+  const colW = [8, 31, 23, 22, 21, 19, 19, 19, 34];
+  const headers = ["N", "Ciclo", "% / attesa", "Press. bar", "Carico kN", "C1 mm", "C2 mm", "C3 mm", "Ced. medio mm"];
+  const headerH = 7;
+  const rowH = 5;
   const rows = result.rows || [];
-  const rowH = 4.1;
 
-  pdf.setFillColor(245, 245, 245);
+  pdf.setFillColor(239, 242, 245);
   pdf.rect(leftX, ly, leftW, headerH, "F");
-
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(5.3);
+  pdf.setFontSize(6.3);
   pdf.setTextColor(20, 20, 20);
-
   let tx = leftX;
-  ["N", "Ciclo", "% / attesa", "Press. [bar]", "Carico [kN]", "Ced. medio"].forEach((head, i) => {
-    pdf.text(head, tx + 1.1, ly + 3.7);
+  headers.forEach((head, i) => {
+    pdf.text(head, tx + 1, ly + 4.5, { maxWidth: colW[i] - 2 });
     tx += colW[i];
   });
-
   ly += headerH;
 
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(4.8);
-
-  rows.forEach((r) => {
-    pdf.setDrawColor(215, 215, 215);
-    pdf.rect(leftX, ly, leftW, rowH);
-
+  const val = (v, digits) => v == null || v === "" ? "—" : fmt(v, digits);
+  rows.forEach((r, index) => {
+    if (index % 2 === 0) {
+      pdf.setFillColor(249, 249, 249);
+      pdf.rect(leftX, ly, leftW, rowH, "F");
+    }
+    pdf.setDrawColor(222, 222, 222);
+    pdf.line(leftX, ly + rowH, leftX + leftW, ly + rowH);
+    const items = [
+      r.stepNo,
+      r.cycleLabel,
+      (r.unload ? "S" : "") + r.percent + "% " + (r.waitMinutes === 0 ? "iniz." : r.waitMinutes + " min"),
+      val(r.pressure, 2),
+      val(r.load, 2),
+      val(r.comparatorValues?.c1, 3),
+      val(r.comparatorValues?.c2, 3),
+      val(r.comparatorValues?.c3, 3),
+      val(r.reading, 3)
+    ];
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(6.25);
+    pdf.setTextColor(20, 20, 20);
     tx = leftX;
-    [r.stepNo, r.cycleLabel, `${r.unload ? "S" : ""}${r.percent}% ${r.waitMinutes === 0 ? "iniz." : `${r.waitMinutes} min`}`, fmt(r.pressure, 2), fmt(r.load, 2), fmt(r.reading, 3)].forEach((value, i) => {
-      pdf.text(String(value), tx + 0.8, ly + 2.8, { maxWidth: colW[i] - 1.6 });
+    items.forEach((item, i) => {
+      pdf.text(String(item), tx + 1, ly + 3.45, { maxWidth: colW[i] - 2 });
       tx += colW[i];
     });
-
     ly += rowH;
   });
 
-  ry = drawSection(pdf, rightX, ry, rightW, "CURVA CARICO - SPOSTAMENTO");
-  drawPdfChartComparators(pdf, result, rightX, ry, rightW, 69);
-  ry += 72;
-
-  ry = drawSection(pdf, rightX, ry, rightW, "DOCUMENTAZIONE FOTOGRAFICA");
-
-  const photoH = 69;
-  pdf.setDrawColor(185, 185, 185);
-  pdf.rect(rightX, ry, rightW, photoH);
-
-  if (photo?.dataUrl) {
-    try {
-      addContainedImage(
-        pdf,
-        photo.dataUrl,
-        imageType(photo.dataUrl),
-        rightX + 2,
-        ry + 2,
-        rightW - 4,
-        photoH - 9
-      );
-
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(5.3);
-      pdf.setTextColor(70, 70, 70);
-      pdf.text(safeText(data.photoCaption || "Foto prova"), rightX + 2, ry + photoH - 3, {
-        maxWidth: rightW - 4,
-      });
-    } catch {
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(6.5);
-      pdf.text("Foto non leggibile", rightX + rightW / 2, ry + photoH / 2, { align: "center" });
-    }
-  } else {
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(6.5);
-    pdf.text("Box foto prova", rightX + rightW / 2, ry + photoH / 2, { align: "center" });
-  }
-
-  ry += photoH + 3;
-  ry = drawSection(pdf, rightX, ry, rightW, "NOTE TECNICHE");
-
-pdf.setFont("helvetica", "normal");
-pdf.setFontSize(5.2);
-pdf.setTextColor(0, 0, 0);
-
-ry = addWrapped(
-  pdf,
-  data.note || "Nessuna nota inserita.",
-  rightX + 2,
-  ry,
-  rightW - 4,
-  2.4
-);
-
-ry = addWrapped(
-  pdf,
-  "Pressione calcolata con proporzione: portata martinetto : 700 bar = carico gradino : x.",
-  rightX + 2,
-  ry + 1.2,
-  rightW - 4,
-  2.4
-);
-
-ry += 3;
-
-  const firmaW = rightW;
-  const firmaX = rightX;
-  const fy = drawSection(pdf, rightX, ry + 3, rightW, "FIRMA TECNICO INCARICATO");
-
+  let fy = drawSection(pdf, ML, ly + 4, CW, "FIRMA TECNICO INCARICATO");
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(5.2);
-  pdf.text(`Tecnico incaricato: ${safeText(data.tecnico, "—")}`, firmaX + 2, fy + 4.2);
-
+  pdf.setFontSize(7);
+  pdf.text("Tecnico incaricato: " + safeText(data.tecnico, "—"), ML + 2, fy + 5.5);
   if (data.signature) {
-    pdf.addImage(data.signature, "PNG", firmaX + 2, fy + 5.8, Math.min(62, firmaW - 4), 16);
-    pdf.text("Firma", firmaX + 2, fy + 24.5);
+    pdf.addImage(data.signature, "PNG", ML + 88, fy + 1, 36, 12);
   } else {
-    pdf.line(firmaX + 2, fy + 19, firmaX + firmaW - 4, fy + 19);
-    pdf.text("Firma", firmaX + 2, fy + 23);
+    pdf.line(ML + 88, fy + 11, ML + 145, fy + 11);
+  }
+  pdf.text("Firma", ML + 148, fy + 11);
+
+  // Pagina 2: grafico grande, note, firma e prime fotografie.
+  pdf.addPage();
+  let sy = 11;
+  sy = drawSection(pdf, ML, sy, CW, "CURVA CARICO - SPOSTAMENTO MEDIO | " + safeText(data.pileId, "Prova palo"));
+  drawPdfChartComparators(pdf, result, ML + 2, sy + 1, CW - 4, 113);
+  sy += 117;
+  sy = drawSection(pdf, ML, sy, CW, "NOTE TECNICHE");
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.2);
+  pdf.setTextColor(20, 20, 20);
+  sy = addWrapped(pdf, data.note || "Nessuna nota inserita.", ML + 2, sy + 1, CW - 4, 4.1) + 4;
+  sy = drawSection(pdf, ML, sy, CW, "DOCUMENTAZIONE FOTOGRAFICA");
+
+  const photos = (Array.isArray(photo) ? photo : photo?.dataUrl ? [photo] : []).filter((p) => p?.dataUrl).slice(0, 10);
+  const drawPhotoBox = (item, index, x, top, width, height) => {
+    pdf.setDrawColor(185, 185, 185);
+    pdf.rect(x, top, width, height);
+    if (item) {
+      try {
+        addContainedImage(pdf, item.dataUrl, imageType(item.dataUrl), x + 2, top + 2, width - 4, height - 12);
+      } catch {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.text("Fotografia non leggibile", x + 3, top + 10);
+      }
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.text("Foto " + (index + 1), x + 3, top + height - 4);
+    } else {
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7);
+      pdf.text("Nessuna fotografia inserita", x + 3, top + 10);
+    }
+  };
+
+  const margin = 10;
+  const gap = 6;
+  const boxW = (PW - margin * 2 - gap) / 2;
+  // Pagina 2: fino a quattro foto in una griglia 2 x 2 sotto il grafico.
+  // La dimensione si adatta allo spazio residuo prima del piè di pagina.
+  const photoRows = photos.length > 2 ? 2 : 1;
+  const photoGap = 5;
+  const availableHeight = 283 - sy;
+  const photoBoxHeight = Math.min(66, (availableHeight - photoGap * (photoRows - 1)) / photoRows);
+  const firstPagePhotos = photos.slice(0, 4);
+  if (firstPagePhotos.length === 0) {
+    drawPhotoBox(null, 0, margin, sy, boxW, Math.min(66, availableHeight));
+  } else {
+    firstPagePhotos.forEach((item, index) => {
+      const x = margin + (index % 2) * (boxW + gap);
+      const top = sy + Math.floor(index / 2) * (photoBoxHeight + photoGap);
+      drawPhotoBox(item, index, x, top, boxW, photoBoxHeight);
+    });
   }
 
-for (let page = 1; page <= pdf.getNumberOfPages(); page++) {
-  pdf.setPage(page);
-  drawFooter(pdf, ML, PW, PH);
-}
+  // Pagina 3: foto 5–10, due colonne per tre righe.
+  const remainingPhotos = photos.slice(4);
+  if (remainingPhotos.length) {
+    pdf.addPage();
+    const top = drawSection(pdf, ML, 11, CW, "DOCUMENTAZIONE FOTOGRAFICA - " + safeText(data.pileId, "Prova palo"));
+    remainingPhotos.forEach((item, index) => {
+      const x = margin + (index % 2) * (boxW + gap);
+      const py = top + Math.floor(index / 2) * 83;
+      drawPhotoBox(item, index + 4, x, py, boxW, 76);
+    });
+  }
+  for (let page = 1; page <= pdf.getNumberOfPages(); page++) {
+    pdf.setPage(page);
+    drawFooter(pdf, ML, PW, PH);
+  }
 
   const name = cleanFileName(`Minuta_prova_palo_${data.pileId || data.reportId || "report"}.pdf`);
   const blob = pdf.output("blob");

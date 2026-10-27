@@ -18,7 +18,7 @@ import { LoginGate } from "./security/LoginGate";
 export default function App() {
   const [data, setData] = useState(DEFAULT_PROJECT);
   const [readings, setReadings] = useState(initialReadings);
-  const [photo, setPhoto] = useState(null);
+  const [photo, setPhoto] = useState([]);
   const [archive, setArchive] = useState(listTests());
   const chartRef = useRef(null);
 
@@ -61,14 +61,14 @@ export default function App() {
     if (!window.confirm("Creare una nuova prova? I dati non salvati verranno persi.")) return;
     setData({ ...DEFAULT_PROJECT, reportId: nextReportId() });
     setReadings(initialReadings());
-    setPhoto(null);
+    setPhoto([]);
   }
 
   function saveCurrent() {
     const id = data.reportId || nextReportId();
     const nextData = { ...data, reportId: id };
     setData(nextData);
-    const record = { id, savedAt: new Date().toISOString(), data: nextData, readings, photo };
+    const record = { id, savedAt: new Date().toISOString(), data: nextData, readings, photos: Array.isArray(photo) ? photo : photo ? [photo] : [] };
     setArchive(saveTest(record));
     window.alert(`Prova ${id} salvata in archivio.`);
   }
@@ -86,7 +86,7 @@ export default function App() {
 
   setData(restoredData);
   setReadings(restoredReadings);
-  setPhoto(record.photo || null);
+  setPhoto(record.photos || (record.photo?.dataUrl ? [record.photo] : []));
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -108,7 +108,7 @@ function duplicateRecord(record) {
 
   setData(duplicatedData);
   setReadings(duplicatedReadings);
-  setPhoto(record.photo || null);
+  setPhoto(record.photos || (record.photo?.dataUrl ? [record.photo] : []));
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -127,7 +127,7 @@ function duplicateRecord(record) {
       pressureReferenceBar: record.data.pressureReferenceBar,
       tonToKn: record.data.tonToKn,
     });
-    exportReport({ data: record.data, result: recResult, photo: record.photo, chartNode: null });
+    exportReport({ data: record.data, result: recResult, photo: record.photos || record.photo, chartNode: null });
   }
 
   return (
@@ -147,7 +147,7 @@ function duplicateRecord(record) {
         <div><span>Collaudo 150%</span><b>{fmt(Number(data.testLoad || result.maxTestLoad || 0), 2)} kN</b></div>
         <div><span>Portata martinetto</span><b>{fmt(result.pressureReferenceLoadKn, 2)} kN</b></div>
         <div><span>Martinetto</span><b>{fmt(result.jackCapacityTon, 2)} t / 700 bar</b></div>
-        <div><span>Foto prova</span><b>{photo ? "Presente" : "Mancante"}</b></div>
+        <div><span>Foto prova</span><b>{(Array.isArray(photo) ? photo.length : photo ? 1 : 0) + " foto"}</b></div>
       </section>
 
       {errors.length > 0 && <div className="warning-box"><b>Controlli prima del PDF:</b> {errors.join(" - ")}</div>}
