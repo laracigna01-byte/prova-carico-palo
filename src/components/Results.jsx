@@ -12,7 +12,7 @@ import { T } from "../config/theme";
 import { ResultCard } from "./Inputs";
 import { fmt } from "../utils/formatters";
 
-function Tip({ active, payload }) {
+function Tip({ active, payload, compare = false }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
 
@@ -24,7 +24,7 @@ function Tip({ active, payload }) {
       <br />
       Cedimento {fmt(p.y, 3)} mm
       <br />
-      Carico {fmt(p.x, 2)} kN
+      Carico {fmt(p.x, 2)} {compare ? "kN" : "daN"}
     </div>
   );
 }
@@ -39,12 +39,12 @@ export function LoadDisplacementChart({ result, compare = false }) {
           type="number"
           dataKey="x"
           name="Carico"
-          unit=" kN"
+          unit={compare ? " kN" : " daN"}
           orientation="top"
           stroke={T.textMuted}
           domain={[0, "dataMax"]}
           label={{
-            value: "Carico [kN]",
+            value: compare ? "Carico [kN]" : "Carico [daN]",
             position: "insideTop",
             offset: -24,
           }}
@@ -65,7 +65,7 @@ export function LoadDisplacementChart({ result, compare = false }) {
           }}
         />
 
-        <Tooltip content={<Tip />} />
+        <Tooltip content={<Tip compare={compare} />} />
         <Legend />
 
         {compare ? (
@@ -145,7 +145,7 @@ export function Results({ result, data, chartRef }) {
         <div className="chart-title">
           <b>Grafico carico / cedimento</b>
           <span>
-            Asse X = carico [kN], asse Y = spostamento medio [mm], crescente verso il basso.
+            Asse X = carico [daN], asse Y = spostamento medio [mm], crescente verso il basso.
             I cicli sono separati come nella minuta.
           </span>
         </div>
