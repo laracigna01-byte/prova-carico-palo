@@ -1,4 +1,4 @@
-import { toNumber, round } from "./formatters";
+import { toNumber, round } from "./formatters.js";
 
 const COMPARATORS = ["c1", "c2", "c3"];
 const READINGS_PER_COMPARATOR = 9;
