@@ -30,6 +30,11 @@ function Tip({ active, payload, compare = false }) {
 }
 
 export function LoadDisplacementChart({ result, compare = false }) {
+  const points = compare ? (result.chartAll || []) : [...(result.chartExercise || []), ...(result.chartTest || [])];
+  const maxLoad = Math.max(0, ...points.map(p => Number(p.x) || 0));
+  const step = maxLoad <= 5000 ? 1000 : maxLoad <= 10000 ? 2000 : 5000;
+  const axisMax = Math.max(step, Math.ceil(maxLoad / step) * step);
+  const ticks = Array.from({ length: Math.round(axisMax / step) + 1 }, (_, i) => i * step);
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ScatterChart margin={{ top: 38, right: 18, bottom: 8, left: 20 }}>
@@ -42,7 +47,9 @@ export function LoadDisplacementChart({ result, compare = false }) {
           unit={compare ? " kN" : " daN"}
           orientation="top"
           stroke={T.textMuted}
-          domain={[0, "dataMax"]}
+          domain={[0, axisMax]}
+          ticks={ticks}
+          allowDecimals={false}
           label={{
             value: compare ? "Carico [kN]" : "Carico [daN]",
             position: "insideTop",
