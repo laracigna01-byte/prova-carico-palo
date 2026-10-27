@@ -238,7 +238,9 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
   const plotY = y + 16;
   const plotW = w - 27;
   const plotH = h - 21;
-  const maxX = Math.max(...allPoints.map((p) => Number(p.x)), 1);
+  const dataMaxX = Math.max(...allPoints.map((p) => Number(p.x)), 1);
+  const xStep = dataMaxX <= 5000 ? 1000 : dataMaxX <= 10000 ? 2000 : 5000;
+  const maxX = Math.ceil(dataMaxX / xStep) * xStep;
   const maxY = Math.max(...allPoints.map((p) => Number(p.y)), 1);
 
   pdf.setDrawColor(80, 80, 80);
@@ -256,7 +258,7 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
       pdf.line(plotX, gy, plotX + plotW, gy);
     }
     pdf.setTextColor(70, 70, 70);
-    pdf.text(fmt((maxX / 5) * i, 1), gx, plotY - 1.2, { align: "center" });
+    pdf.text(fmt((maxX / 5) * i, 0), gx, plotY - 1.2, { align: "center" });
     pdf.text(fmt((maxY / 5) * i, 2), plotX - 1.5, gy + 0.8, { align: "right" });
   }
 
