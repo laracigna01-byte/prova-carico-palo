@@ -261,7 +261,7 @@ function drawPdfChartComparators(pdf, result, x, y, w, h) {
   }
 
   pdf.setFontSize(4.7);
-  pdf.text("Carico [kN]", plotX + plotW / 2, y + 8.4, { align: "center" });
+  pdf.text("Carico [daN]", plotX + plotW / 2, y + 8.4, { align: "center" });
   pdf.text("Spostamento [mm]", x + 3.8, plotY + plotH / 2, { angle: 90 });
 
   function px(p) { return plotX + (Number(p.x) / maxX) * plotW; }
