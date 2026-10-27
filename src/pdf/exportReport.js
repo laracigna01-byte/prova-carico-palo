@@ -432,9 +432,13 @@ export async function exportReport({ data, result, photo = null, preview = false
     ly += rowH;
   });
 
+  ry = drawSection(pdf, rightX, ry, rightW, "CURVA CARICO - SPOSTAMENTO");
+  drawPdfChartComparators(pdf, result, rightX, ry, rightW, 69);
+  ry += 72;
+
   ry = drawSection(pdf, rightX, ry, rightW, "DOCUMENTAZIONE FOTOGRAFICA");
 
-  const photoH = 60;
+  const photoH = 69;
   pdf.setDrawColor(185, 185, 185);
   pdf.rect(rightX, ry, rightW, photoH);
 
@@ -494,24 +498,9 @@ ry = addWrapped(
 
 ry += 3;
 
-  // Una minuta con 31 rilievi non deve comprimere grafico e firma fuori pagina.
-  let chartY = Math.max(ly, ry) + 4;
-  if (chartY + 5.5 + 52 + 4 + 31 > PH - 10) {
-    pdf.addPage();
-    chartY = 17;
-  }
-
-  drawSection(pdf, ML, chartY, CW, "CURVA CARICO - SPOSTAMENTO");
-
-  const chartH = 52;
-  drawPdfChartComparators(pdf, result, ML, chartY + 5.5, CW, chartH);
-
-  const bottomY = chartY + 5.5 + chartH + 4;
-
-  const firmaW = CW;
-  const firmaX = ML;
-
-  let fy = drawSection(pdf, firmaX, bottomY, firmaW, "FIRMA TECNICO INCARICATO");
+  const firmaW = rightW;
+  const firmaX = rightX;
+  const fy = drawSection(pdf, rightX, ry + 3, rightW, "FIRMA TECNICO INCARICATO");
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(5.2);
