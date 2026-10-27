@@ -66,6 +66,13 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.text(safeText(value, "—"), x + 0.8, y + 4.4, { maxWidth: w - 1.6 });
 }
 
+function pdfLoadKn(value) {
+  const n = Number(String(value ?? "").replace(",", "."));
+  return value !== "" && value != null && Number.isFinite(n)
+    ? n.toFixed(2).replace(".", ",") + " kN"
+    : "—";
+}
+
 function addContainedImage(pdf, dataUrl, type, boxX, boxY, boxW, boxH) {
   const props = pdf.getImageProperties(dataUrl);
   const imgRatio = props.width / props.height;
@@ -379,8 +386,8 @@ export async function exportReport({ data, result, photo = null, preview = false
 
   drawCompactCell(pdf, leftX, ly, w4, h, "Identificativo palo", data.pileId);
   drawCompactCell(pdf, leftX + w4, ly, w4, h, "Lunghezza", `${safeText(data.length, "—")} m`);
-  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio", `${safeText(data.exerciseLoad || result.baseLoad, "—")} kN`);
-  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Collaudo 150%", `${safeText(data.testLoad || result.maxTestLoad, "—")} kN`);
+  drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Carico esercizio", pdfLoadKn(data.exerciseLoad || result.baseLoad));
+  drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Collaudo 150%", pdfLoadKn(data.testLoad || result.maxTestLoad));
   ly += h;
 
   drawCompactCell(pdf, leftX, ly, w4, h, "Diametro", `${safeText(data.diameter, "—")} mm`);
