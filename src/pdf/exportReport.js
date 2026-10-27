@@ -56,14 +56,14 @@ function drawCompactCell(pdf, x, y, w, h, label, value) {
   pdf.rect(x, y, w, h);
 
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(4.5);
+  pdf.setFontSize(6);
   pdf.setTextColor(90, 90, 90);
-  pdf.text(label, x + 0.8, y + 1.8, { maxWidth: w - 1.6 });
+  pdf.text(label, x + 1, y + 2.6, { maxWidth: w - 1.6 });
 
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(4.8);
+  pdf.setFontSize(7.2);
   pdf.setTextColor(10, 10, 10);
-  pdf.text(safeText(value, "—"), x + 0.8, y + 4.4, { maxWidth: w - 1.6 });
+  pdf.text(safeText(value, "—"), x + 1, y + 6.35, { maxWidth: w - 1.6 });
 }
 
 function pdfLoadKn(value) {
@@ -441,6 +441,17 @@ export async function exportReport({ data, result, photo = null, preview = false
     ly += rowH;
   });
 
+  let fy = drawSection(pdf, ML, ly + 4, CW, "FIRMA TECNICO INCARICATO");
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7);
+  pdf.text("Tecnico incaricato: " + safeText(data.tecnico, "—"), ML + 2, fy + 5.5);
+  if (data.signature) {
+    pdf.addImage(data.signature, "PNG", ML + 88, fy + 1, 36, 12);
+  } else {
+    pdf.line(ML + 88, fy + 11, ML + 145, fy + 11);
+  }
+  pdf.text("Firma", ML + 148, fy + 11);
+
   // Pagina 2: grafico grande, note, firma e prime fotografie.
   pdf.addPage();
   let sy = 11;
@@ -492,18 +503,6 @@ export async function exportReport({ data, result, photo = null, preview = false
       drawPhotoBox(item, offset + j + 2, x, py, boxW, 76);
     });
   }
-  pdf.addPage();
-  let fy = drawSection(pdf, ML, 13, CW, "FIRMA TECNICO INCARICATO");
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(8);
-  pdf.text("Tecnico incaricato: " + safeText(data.tecnico, "—"), ML + 2, fy + 6);
-  if (data.signature) {
-    pdf.addImage(data.signature, "PNG", ML + 2, fy + 9, 65, 24);
-  } else {
-    pdf.line(ML + 2, fy + 28, ML + 91, fy + 28);
-  }
-  pdf.text("Firma", ML + 2, fy + 36);
-
   for (let page = 1; page <= pdf.getNumberOfPages(); page++) {
     pdf.setPage(page);
     drawFooter(pdf, ML, PW, PH);
