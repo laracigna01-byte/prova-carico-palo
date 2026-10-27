@@ -51,7 +51,6 @@ function calcComparator(values) {
     // L'ultima lettura disponibile rappresenta la misura del gradino.
     value: nums.length ? round(nums[nums.length - 1], 3) : null,
   };
-};
 }
 
 function calcStepStats(readings) {
