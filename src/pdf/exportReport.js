@@ -384,7 +384,7 @@ export async function exportReport({ data, result, photo = null, preview = false
   ly += h;
 
   drawCompactCell(pdf, leftX, ly, w4, h, "Diametro", `${safeText(data.diameter, "—")} mm`);
-  drawCompactCell(pdf, leftX + w4, ly, w4, h, "Martinetto", `${safeText(data.jackId, "—")} / ${safeText(data.jackCapacityTon, "30")} t`);
+  drawCompactCell(pdf, leftX + w4, ly, w4, h, "ID martinetto / portata", `${safeText(data.jackId, "—")} / ${safeText(data.jackCapacityTon, "—")} t`);
   drawCompactCell(pdf, leftX + 2 * w4, ly, w4, h, "Manometro/cella", data.manometerId);
   drawCompactCell(pdf, leftX + 3 * w4, ly, w4, h, "Comparatori", data.comparatorId);
   ly += h;
