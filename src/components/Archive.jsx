@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import { deleteTest } from "../utils/storage";
+import { useMemo, useRef, useState } from "react";
 
 function fmtDate(value) {
   if (!value) return "—";
@@ -10,8 +9,10 @@ function fmtDate(value) {
   }
 }
 
-export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport }) {
+export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport, onBackup, onRestore, ready = true }) {
   const [query, setQuery] = useState("");
+  const fileRef = useRef(null);
+  const [importing, setImporting] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -44,7 +45,7 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport })
 
     if (!ok) return;
 
-    setItems(deleteTest(item.id));
+    setItems((previous) => previous.filter((record) => record.id !== item.id));
   }
 
   return (
@@ -56,6 +57,28 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport })
           <i />
         </div>
 
+        <div className="archive-transfer-tools" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+          <button type="button" onClick={onBackup} disabled={!ready || importing}>Esporta archivio JSON</button>
+          <button type="button" onClick={() => fileRef.current?.click()} disabled={!ready || importing}>Importa archivio JSON</button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json,application/json"
+            aria-label="Seleziona backup JSON archivio pali"
+            style={{ display: "none" }}
+            onChange={async (event) => {
+              const file = event.target.files?.[0];
+              if (!file) return;
+              setImporting(true);
+              try { await onRestore(file); }
+              finally {
+                event.target.value = "";
+                setImporting(false);
+              }
+            }}
+          />
+          <small style={{ alignSelf: "center" }}>Il JSON contiene prove, letture e foto. Importazione senza sovrascrivere i duplicati.</small>
+        </div>
         <div className="archive-tools">
           <input
             type="search"
