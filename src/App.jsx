@@ -135,6 +135,8 @@ export default function App() {
     setData({ ...DEFAULT_PROJECT, reportId: nextReportId() });
     setReadings(initialReadings());
     setPhoto([]);
+    setActiveStepIndex(0);
+    setShowAllSteps(false);
   }
 
   function saveCurrent() {
@@ -163,6 +165,8 @@ export default function App() {
   setData(restoredData);
   setReadings(restoredReadings);
   setPhoto(record.photos || (record.photo?.dataUrl ? [record.photo] : []));
+  setActiveStepIndex(0);
+  setShowAllSteps(false);
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -185,6 +189,8 @@ function duplicateRecord(record) {
   setData(duplicatedData);
   setReadings(duplicatedReadings);
   setPhoto(record.photos || (record.photo?.dataUrl ? [record.photo] : []));
+  setActiveStepIndex(0);
+  setShowAllSteps(false);
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -197,12 +203,13 @@ function duplicateRecord(record) {
       ...DEFAULT_PROJECT,
       ...(record.data || {}),
       reportId: newId,
-      pileId: `${record.data?.pileId || "P"}-COPIA`,
       signature: "",
     };
     setData(duplicatedData);
     setReadings(initialReadings());
     setPhoto([]);
+    setActiveStepIndex(0);
+    setShowAllSteps(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
