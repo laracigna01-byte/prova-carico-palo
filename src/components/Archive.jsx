@@ -13,6 +13,38 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport, o
   const [query, setQuery] = useState("");
   const fileRef = useRef(null);
   const [importing, setImporting] = useState(false);
+  const [transferMessage, setTransferMessage] = useState("");
+  const [transferError, setTransferError] = useState(false);
+
+  async function handleExport() {
+    setTransferMessage("");
+    try {
+      const result = await onBackup();
+      setTransferError(false);
+      setTransferMessage(result?.message || "Esportazione avviata.");
+    } catch (error) {
+      setTransferError(true);
+      setTransferMessage(error.message || "Impossibile esportare l'archivio.");
+    }
+  }
+
+  async function handleImport(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    setTransferMessage("");
+    try {
+      const result = await onRestore(file);
+      setTransferError(false);
+      setTransferMessage(result?.message || "Importazione completata.");
+    } catch (error) {
+      setTransferError(true);
+      setTransferMessage(error instanceof SyntaxError ? "Il file selezionato non contiene un JSON valido." : (error.message || "Importazione non riuscita."));
+    } finally {
+      event.target.value = "";
+      setImporting(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -57,28 +89,33 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport, o
           <i />
         </div>
 
-        <div className="archive-transfer-tools" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
-          <button type="button" onClick={onBackup} disabled={!ready || importing}>Esporta archivio JSON</button>
-          <button type="button" onClick={() => fileRef.current?.click()} disabled={!ready || importing}>Importa archivio JSON</button>
+        <div className="archive-transfer-tools">
+          <button className="archive-transfer-button archive-transfer-button--export" type="button" onClick={handleExport} disabled={!ready || importing}>
+            <span className="archive-transfer-symbol" aria-hidden="true">↓</span>
+            <span className="archive-transfer-copy">
+              <strong>Esporta archivio JSON</strong>
+              <small>Scarica tutte le prove, le letture e le foto</small>
+            </span>
+          </button>
+          <button className="archive-transfer-button archive-transfer-button--import" type="button" onClick={() => fileRef.current?.click()} disabled={!ready || importing}>
+            <span className="archive-transfer-symbol" aria-hidden="true">↑</span>
+            <span className="archive-transfer-copy">
+              <strong>Importa archivio JSON</strong>
+              <small>Carica un backup ricevuto da un altro PC</small>
+            </span>
+          </button>
           <input
             ref={fileRef}
             type="file"
             accept=".json,application/json"
             aria-label="Seleziona backup JSON archivio pali"
-            style={{ display: "none" }}
-            onChange={async (event) => {
-              const file = event.target.files?.[0];
-              if (!file) return;
-              setImporting(true);
-              try { await onRestore(file); }
-              finally {
-                event.target.value = "";
-                setImporting(false);
-              }
-            }}
+            className="archive-transfer-file"
+            onChange={handleImport}
           />
-          <small style={{ alignSelf: "center" }}>Il JSON contiene prove, letture e foto. Importazione senza sovrascrivere i duplicati.</small>
         </div>
+        {!ready && <p className="archive-transfer-status" role="status">Caricamento dell'archivio in corso...</p>}
+        {importing && <p className="archive-transfer-status" role="status">Lettura e importazione del backup in corso...</p>}
+        {transferMessage && <p className={`archive-transfer-status ${transferError ? "archive-transfer-status--error" : ""}`} role="status">{transferMessage}</p>}
         <div className="archive-tools">
           <input
             type="search"
