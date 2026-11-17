@@ -125,15 +125,17 @@ async function idbWriteAll(list) {
       db.close();
       resolve(false);
     };
+    tx.onabort = () => resolve(false);
   });
 }
 
 function writeLocalSnapshot(list) {
   try {
     localStorage.setItem(KEY, JSON.stringify(sortTests(list)));
+    return true;
   } catch {
-    // Se le foto rendono l'archivio troppo grande per localStorage,
-    // IndexedDB resta comunque la memoria principale della PWA.
+    // IndexedDB è la memoria principale quando le foto superano il limite di localStorage.
+    return false;
   }
 }
 
@@ -141,9 +143,24 @@ export function nextReportId() {
   const year = new Date().getFullYear();
   const raw = localStorage.getItem(COUNTER);
   const state = safeJsonParse(raw, { year, n: 0 });
-  const n = state.year === year ? state.n + 1 : 1;
+  const used = new Set(listTests().map((record) => record.id));
+  let n = state.year === year ? state.n + 1 : 1;
+  while (used.has(`PAL-${year}-${String(n).padStart(3, "0")}`)) n += 1;
   localStorage.setItem(COUNTER, JSON.stringify({ year, n }));
   return `PAL-${year}-${String(n).padStart(3, "0")}`;
+}
+
+export function updateReportCounter(records) {
+  const year = new Date().getFullYear();
+  const state = safeJsonParse(localStorage.getItem(COUNTER), { year, n: 0 });
+  let highest = state.year === year ? Number(state.n) || 0 : 0;
+  for (const record of records) {
+    const match = /^PAL-(\d{4})-(\d+)$/.exec(record.id || "");
+    if (match && Number(match[1]) === year) {
+      highest = Math.max(highest, Number(match[2]));
+    }
+  }
+  localStorage.setItem(COUNTER, JSON.stringify({ year, n: highest }));
 }
 
 export function listTests() {
@@ -174,8 +191,11 @@ export async function loadServerTests() {
 
 export async function syncServerTests(list) {
   const sorted = sortTests(list);
-  writeLocalSnapshot(sorted);
-  await idbWriteAll(sorted);
+  const savedToDb = await idbWriteAll(sorted);
+  const savedLocally = writeLocalSnapshot(sorted);
+  if (!savedToDb && !savedLocally) {
+    throw new Error("Spazio di archiviazione insufficiente: il backup non è stato salvato.");
+  }
   return sorted;
 }
 
