@@ -21,6 +21,8 @@ export default function App() {
   const [photo, setPhoto] = useState([]);
   const [archive, setArchive] = useState(listTests());
   const chartRef = useRef(null);
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
+  const [showAllSteps, setShowAllSteps] = useState(false);
   const [archiveReady, setArchiveReady] = useState(false);
   const persistenceQueue = useRef(Promise.resolve());
 
@@ -68,6 +70,65 @@ export default function App() {
   const errors = useMemo(() => validateTest({ data, result, photo }), [data, result, photo]);
 
   const setReading = (key, value) => setReadings((prev) => ({ ...prev, [key]: value }));
+
+  const cycles = useMemo(() => {
+    const groups = new Map();
+    result.rows.forEach((step, index) => {
+      if (!groups.has(step.cycle)) {
+        groups.set(step.cycle, { id: step.cycle, label: step.cycleLabel, first: index, indices: [] });
+      }
+      groups.get(step.cycle).indices.push(index);
+    });
+    return [...groups.values()];
+  }, [result.rows]);
+
+  function hasReadings(stepKey) {
+    const entry = readings[stepKey];
+    if (!entry || typeof entry !== "object") return Boolean(entry);
+    return Object.values(entry).some((values) =>
+      (Array.isArray(values) ? values : [values]).some((value) => String(value ?? "").trim() !== "")
+    );
+  }
+
+  function scrollToArea(id) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function focusStepReading(index) {
+    const step = result.rows[index];
+    if (!step) return;
+    window.requestAnimationFrame(() => {
+      const field = document.querySelector(`[data-step-id="${step.key}"] input[data-reading-input]`);
+      field?.focus({ preventScroll: true });
+      scrollToArea("palo-letture");
+    });
+  }
+
+  function goToStep(index, focusInput = false) {
+    const next = Math.min(Math.max(0, index), Math.max(0, result.rows.length - 1));
+    setActiveStepIndex(next);
+    if (focusInput) {
+      focusStepReading(next);
+    } else {
+      scrollToArea("palo-letture");
+    }
+  }
+
+  function nextFromReading(index) {
+    if (index < result.rows.length - 1) {
+      goToStep(index + 1, true);
+    } else {
+      window.requestAnimationFrame(() => {
+        scrollToArea("palo-azioni");
+        document.querySelector("#palo-azioni button")?.focus({ preventScroll: true });
+      });
+    }
+  }
+
+  function goToReadings() {
+    focusStepReading(activeStepIndex);
+  }
+
 
   function newTest() {
     if (!window.confirm("Creare una nuova prova? I dati non salvati verranno persi.")) return;
@@ -264,7 +325,13 @@ function duplicateRecord(record) {
         theme={theme}
         setTheme={setTheme}
       />
-      <InfoPanel data={data} setData={setData} photo={photo} setPhoto={setPhoto} />
+      <nav className="palo-quick-nav" aria-label="Vai a una sezione">
+        <button type="button" onClick={() => scrollToArea("palo-dati")}>Dati prova</button>
+        <button type="button" onClick={goToReadings}>Letture</button>
+        <button type="button" onClick={() => scrollToArea("palo-risultati")}>Risultati e PDF</button>
+        <button type="button" onClick={() => scrollToArea("palo-archivio")}>Archivio</button>
+      </nav>
+      <InfoPanel data={data} setData={setData} photo={photo} setPhoto={setPhoto} onGoToReadings={goToReadings} />
 
       <section className="summary-strip">
         <div><span>Ne esercizio</span><b>{fmt(Number(data.exerciseLoad || result.baseLoad || 0), 2)} kN</b></div>
@@ -276,31 +343,82 @@ function duplicateRecord(record) {
 
       {errors.length > 0 && <div className="warning-box"><b>Controlli prima del PDF:</b> {errors.join(" - ")}</div>}
 
-      <section className="workbench">
+      <section className="workbench" id="palo-letture">
         <div className="left-col">
           <SectionHeader label="Tabella prova - 3 comparatori" step="1" color={T.accentBlue} />
           <p className="hint">La tabella segue i cicli di esercizio e collaudo. La pressione è calcolata con la portata del martinetto; il tecnico inserisce almeno 9 letture per ciascuno dei 3 comparatori.</p>
-          <div className="steps one-col">
+          <div className="palo-step-workflow">
+            <div className="palo-cycle-tabs" role="group" aria-label="Seleziona ciclo della prova">
+              {cycles.map((cycle) => {
+                const completed = cycle.indices.filter((index) => hasReadings(result.rows[index].key)).length;
+                const active = result.rows[activeStepIndex]?.cycle === cycle.id;
+                return (
+                  <button key={cycle.id} type="button" className={active ? "is-active" : ""}
+                    aria-pressed={active} onClick={() => goToStep(cycle.first, true)}>
+                    <strong>{cycle.label}</strong>
+                    <small>{completed}/{cycle.indices.length} gradini compilati</small>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="palo-step-nav">
+              <div className="palo-step-nav-title">
+                <b>Gradino {activeStepIndex + 1} di {result.rows.length}</b>
+                <span>Invio = lettura successiva</span>
+              </div>
+              <select aria-label="Vai direttamente al gradino" value={activeStepIndex}
+                onChange={(event) => goToStep(Number(event.target.value), true)}>
+                {result.rows.map((step, index) => (
+                  <option key={step.key} value={index}>
+                    {index + 1}. {step.cycleLabel} - {step.label}{hasReadings(step.key) ? " ✓" : ""}
+                  </option>
+                ))}
+              </select>
+              <button type="button" onClick={() => goToStep(activeStepIndex - 1, true)} disabled={activeStepIndex === 0}>
+                ← Precedente
+              </button>
+              <button type="button" onClick={() => goToStep(activeStepIndex + 1, true)}
+                disabled={activeStepIndex === result.rows.length - 1}>
+                Successivo →
+              </button>
+            </div>
+            <label className="palo-show-all">
+              <input type="checkbox" checked={showAllSteps} onChange={(event) => setShowAllSteps(event.target.checked)} />
+              Mostra tutti i gradini (riepilogo completo)
+            </label>
+          </div>
+          <div className="steps one-col palo-steps">
             {result.rows.map((row, index) => (
-              <StepTable
-                key={row.key}
-                step={row}
-                load={row.load}
-                targetLoad={row.targetLoad}
-                pressure={row.pressure}
-                value={readings[row.key]}
-                onChange={(value) => setReading(row.key, value)}
-                color={row.unload ? T.accentOrange : T.cycle2}
-              />
+              (showAllSteps || index === activeStepIndex) && (
+                <StepTable
+                  key={row.key}
+                  step={row}
+                  load={row.load}
+                  targetLoad={row.targetLoad}
+                  pressure={row.pressure}
+                  value={readings[row.key]}
+                  onChange={(value) => setReading(row.key, value)}
+                  onNextStep={() => nextFromReading(index)}
+                  color={row.unload ? T.accentOrange : T.cycle2}
+                />
+              )
             ))}
           </div>
+          {!showAllSteps && (
+            <div className="palo-step-footer">
+              <button type="button" onClick={() => goToStep(activeStepIndex - 1, true)} disabled={activeStepIndex === 0}>← Gradino precedente</button>
+              <button type="button" onClick={() => nextFromReading(activeStepIndex)}>
+                {activeStepIndex === result.rows.length - 1 ? "Vai al PDF e salvataggio →" : "Gradino successivo →"}
+              </button>
+            </div>
+          )}
         </div>
-        <aside className="right-col">
+        <aside className="right-col" id="palo-risultati">
           <SectionHeader label="Grafico, firma e report" step="2" color={T.accent} />
           <Results result={result} data={data} chartRef={chartRef} />
           <SectionHeader label="Firma tecnico" step="3" color={T.accentYellow} />
           <SignaturePad value={data.signature} onChange={(signature) => setData((prev) => ({ ...prev, signature }))} />
-          <div className="actions">
+          <div className="actions" id="palo-azioni">
             <button onClick={exportCurrent}>Genera PDF</button>
             <button className="ghost" onClick={saveCurrent}>Salva in archivio</button>
             <button className="ghost" onClick={() => exportCsv({ data, result })}>CSV Excel</button>
@@ -309,7 +427,7 @@ function duplicateRecord(record) {
         </aside>
       </section>
 
-      <Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onDuplicateData={duplicateDataOnly} onExport={exportRecord} onBackup={downloadArchive} onRestore={importArchive} ready={archiveReady} />
+      <div id="palo-archivio" className="palo-archive-anchor"><Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onDuplicateData={duplicateDataOnly} onExport={exportRecord} onBackup={downloadArchive} onRestore={importArchive} ready={archiveReady} /></div>
     </main>
   </LoginGate>
   );
