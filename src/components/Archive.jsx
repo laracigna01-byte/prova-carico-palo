@@ -9,7 +9,7 @@ function fmtDate(value) {
   }
 }
 
-export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport, onBackup, onRestore, ready = true }) {
+export function Archive({ items = [], setItems, onOpen, onDuplicate, onDuplicateData, onExport, onBackup, onRestore, ready = true }) {
   const [query, setQuery] = useState("");
   const fileRef = useRef(null);
   const [importing, setImporting] = useState(false);
@@ -162,8 +162,20 @@ export function Archive({ items = [], setItems, onOpen, onDuplicate, onExport, o
                       <button type="button" onClick={() => onOpen(item)}>
                         Apri
                       </button>
-                      <button type="button" onClick={() => onDuplicate(item)}>
-                        Duplica
+                      <button
+                        type="button"
+                        className="archive-duplicate-data"
+                        title="Copia i dati del palo senza letture, foto o firma"
+                        onClick={() => onDuplicateData(item)}
+                      >
+                        Duplica dati
+                      </button>
+                      <button
+                        type="button"
+                        title="Copia completa, comprese le letture e gli allegati"
+                        onClick={() => onDuplicate(item)}
+                      >
+                        Duplica tutto
                       </button>
                       <button type="button" onClick={() => onExport(item)}>
                         PDF
