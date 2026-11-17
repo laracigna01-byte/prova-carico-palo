@@ -71,7 +71,7 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
     const next = fields[currentIndex + 1];
     if (next) {
       next.focus();
-      next.select();
+      // I campi numerici non supportano sempre la selezione del testo; il focus basta.
     } else {
       onNextStep?.();
     }
