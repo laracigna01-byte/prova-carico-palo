@@ -385,3 +385,136 @@ body.theme-light .reading-nine-grid input {
     font-size: 16px;
   }
 }
+
+
+/* Trasferimento archivio JSON - comandi grandi per PC e smartphone */
+.archive-transfer-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 16px 0;
+}
+.archive-transfer-button {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  width: 100%;
+  min-height: 92px;
+  padding: 16px 20px;
+  border: 2px solid;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .16);
+  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.archive-transfer-button--export {
+  color: #f0f8ff;
+  background: linear-gradient(125deg, #163e60, #174d7e);
+  border-color: #459fec;
+}
+.archive-transfer-button--import {
+  color: #fff9e9;
+  background: linear-gradient(125deg, #5b3c12, #70511c);
+  border-color: #e7b94c;
+}
+.archive-transfer-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, .22);
+}
+.archive-transfer-button:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 3px;
+}
+.archive-transfer-button:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+.archive-transfer-symbol {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 12px;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  background: rgba(255, 255, 255, .1);
+}
+.archive-transfer-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.archive-transfer-copy strong {
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+.archive-transfer-copy small {
+  font-size: 13px;
+  line-height: 1.35;
+  opacity: .92;
+}
+.archive-transfer-file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.archive-transfer-status {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #123a34;
+  border: 1px solid #3cb98c;
+  color: #e2fff3;
+  font-weight: 700;
+  margin: 8px 0 16px;
+}
+.archive-transfer-status--error {
+  color: #fff1ef;
+  background: #5c2424;
+  border-color: #f87171;
+}
+body.theme-light .archive-transfer-button--export {
+  background: #dfedff;
+  color: #153c66;
+  border-color: #377fba;
+}
+body.theme-light .archive-transfer-button--import {
+  background: #fff0c2;
+  color: #654613;
+  border-color: #ca9727;
+}
+body.theme-light .archive-transfer-status {
+  background: #dcfce7;
+  color: #14532d;
+  border-color: #4ade80;
+}
+body.theme-light .archive-transfer-status--error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #f87171;
+}
+@media (max-width: 760px) {
+  .archive-transfer-tools {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .archive-transfer-button {
+    min-height: 80px;
+    padding: 14px 16px;
+  }
+  .archive-transfer-copy strong {
+    font-size: 17px;
+  }
+}
