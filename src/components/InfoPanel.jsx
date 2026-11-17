@@ -4,7 +4,7 @@ import { PhotoUploader } from "./PhotoUploader";
 import { T } from "../config/theme";
 import { NORME } from "../config/testConfig";
 
-export function InfoPanel({ data, setData, photo, setPhoto }) {
+export function InfoPanel({ data, setData, photo, setPhoto, onGoToReadings }) {
   const [open, setOpen] = useState(true);
   const upd = (key) => (value) => setData((prev) => ({ ...prev, [key]: value }));
 
@@ -16,14 +16,33 @@ export function InfoPanel({ data, setData, photo, setPhoto }) {
     }));
   };
 
+  function handleEnter(event) {
+    if (event.key !== "Enter" || event.ctrlKey || event.metaKey || event.altKey ||
+        event.shiftKey || event.nativeEvent?.isComposing ||
+        !event.target.matches?.(".field input:not([readonly]):not([disabled])")) return;
+    const inputs = [...event.currentTarget.querySelectorAll(".field input:not([readonly]):not([disabled])")];
+    const currentIndex = inputs.indexOf(event.target);
+    if (currentIndex < 0) return;
+    event.preventDefault();
+    if (inputs[currentIndex + 1]) {
+      inputs[currentIndex + 1].focus();
+      if (inputs[currentIndex + 1].type !== "date" && inputs[currentIndex + 1].type !== "time") {
+        inputs[currentIndex + 1].select?.();
+      }
+    } else {
+      onGoToReadings?.();
+    }
+  }
+
   return (
-    <div className="panel">
+    <div className="panel" id="palo-dati" onKeyDown={handleEnter}>
       <button className="panel-toggle" type="button" onClick={() => setOpen(!open)}>
         {open ? "Nascondi dati prova" : "Mostra dati prova"}
         <span>{data.reportId ? `Rapporto ${data.reportId}` : "UNI EN ISO 22477-1 - Prova di carico statica assiale su palo"}</span>
       </button>
       {open && (
         <div className="panel-body">
+          <p className="palo-enter-hint">Compilazione da PC: premi <kbd>Invio</kbd> per passare al campo successivo. Nelle note, Invio inserisce una nuova riga.</p>
           <SectionHeader label="Dati generali" step="A" color={T.accentBlue} />
           <div className="norm-box"><b>Riferimenti normativi</b><span>{NORME.uni} - {NORME.dm}</span></div>
           <div className="grid small">

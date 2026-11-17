@@ -39,7 +39,7 @@ function isStable(values) {
   );
 }
 
-export function StepTable({ step, load, targetLoad, pressure, value = {}, onChange, color }) {
+export function StepTable({ step, load, targetLoad, pressure, value = {}, onChange, onNextStep, color }) {
   const readings = normalize(value);
 
   const counts = Object.fromEntries(
@@ -60,8 +60,27 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
     onChange({ ...readings, [compKey]: nextComp });
   };
 
+  function handleReadingEnter(event) {
+    if (event.key !== "Enter" || event.altKey || event.ctrlKey || event.metaKey ||
+        event.shiftKey || event.nativeEvent?.isComposing ||
+        !event.target.matches?.("input[data-reading-input]")) return;
+    event.preventDefault();
+    const fields = [...event.currentTarget.querySelectorAll("input[data-reading-input]")];
+    const currentIndex = fields.indexOf(event.target);
+    if (currentIndex < 0) return;
+    const next = fields[currentIndex + 1];
+    if (next) {
+      next.focus();
+      // I campi numerici non supportano sempre la selezione del testo; il focus basta.
+    } else {
+      onNextStep?.();
+    }
+  }
+
   return (
     <div
+      data-step-id={step.key}
+      onKeyDown={handleReadingEnter}
       className={`step-table ${step.unload ? "is-unload" : ""}`}
       style={{ borderColor: step.unload ? T.accentOrange : T.border }}
     >
@@ -114,6 +133,8 @@ export function StepTable({ step, load, targetLoad, pressure, value = {}, onChan
                 <label key={`${key}-${index}`}>
                   <small>{index + 1}</small>
                   <input
+                    data-reading-input
+                    aria-label={`${labels[key]}, lettura ${index + 1}, ${step.cycleLabel} ${step.label}`}
                     type="number"
                     inputMode="decimal"
                     step="0.01"

@@ -518,3 +518,233 @@ body.theme-light .archive-transfer-status--error {
     font-size: 17px;
   }
 }
+
+
+/* Palo: compilazione compatta e navigazione con tastiera */
+.palo-quick-nav {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 10px;
+  margin: 12px 0;
+  border: 1px solid #425775;
+  border-radius: 12px;
+  background: #142033;
+  box-shadow: 0 6px 24px #0006;
+}
+.palo-quick-nav button {
+  flex: 1 0 auto;
+  min-height: 43px;
+  border: 1px solid #536e94;
+  border-radius: 9px;
+  background: #213b5b;
+  color: #f0f6ff;
+  padding: 9px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.palo-quick-nav button:hover { background: #31557d; }
+.palo-quick-nav button:focus-visible,
+.palo-step-workflow button:focus-visible,
+.palo-step-workflow select:focus-visible,
+.palo-step-footer button:focus-visible,
+.row-actions .archive-duplicate-data:focus-visible {
+  outline: 3px solid #f6c85f;
+  outline-offset: 2px;
+}
+#palo-dati, #palo-letture, #palo-risultati, #palo-archivio, #palo-azioni {
+  scroll-margin-top: 88px;
+}
+.palo-enter-hint {
+  background: #1b2b40;
+  border: 1px solid #42638b;
+  border-radius: 9px;
+  color: #d8e9fc;
+  font-size: 13px;
+  padding: 10px 12px;
+  margin: 0 0 12px;
+}
+.palo-enter-hint kbd {
+  background: #324961;
+  border: 1px solid #658bb4;
+  border-radius: 5px;
+  color: #fff;
+  padding: 2px 6px;
+  font-weight: 800;
+}
+.palo-step-workflow {
+  border: 1px solid #364960;
+  border-radius: 12px;
+  background: #172234;
+  padding: 12px;
+  margin: 12px 0 14px;
+}
+.palo-cycle-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.palo-cycle-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 62px;
+  padding: 11px 12px;
+  border: 1px solid #455a73;
+  border-radius: 9px;
+  color: #d8e5f4;
+  background: #202f42;
+  cursor: pointer;
+  text-align: left;
+}
+.palo-cycle-tabs button.is-active {
+  background: #25496d;
+  border: 2px solid #70b5f6;
+  color: #fff;
+}
+.palo-cycle-tabs button strong {
+  font-size: 13px;
+  line-height: 1.25;
+}
+.palo-cycle-tabs button small { font-size: 11px; opacity: .82; }
+.palo-step-nav {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(155px, 2fr);
+  gap: 9px;
+  align-items: center;
+}
+.palo-step-nav-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+}
+.palo-step-nav-title span {
+  font-size: 11px;
+  color: #b8c8dc;
+}
+.palo-step-nav select {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid #6a89ac;
+  border-radius: 9px;
+  background: #101b2a;
+  color: #fff;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 13px;
+}
+.palo-step-nav button,
+.palo-step-footer button {
+  min-height: 44px;
+  border: 1px solid #698bb0;
+  border-radius: 9px;
+  background: #2b4e72;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 9px 12px;
+}
+.palo-step-nav button:disabled,
+.palo-step-footer button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+.palo-show-all {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 2px 0;
+  font-size: 12px;
+  color: #c5d5e8;
+  cursor: pointer;
+}
+.palo-show-all input { width: 17px; height: 17px; accent-color: #5cb2ff; }
+.palo-step-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin: 12px 0 0;
+}
+.palo-step-footer button { flex: 1; }
+.row-actions .archive-duplicate-data {
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid #d7aa3b;
+  border-radius: 9px;
+  background: #574116;
+  color: #fff2c8;
+  font-weight: 900;
+  cursor: pointer;
+}
+.row-actions .archive-duplicate-data:hover { background: #74551c; }
+body.theme-light .palo-quick-nav {
+  background: #e7effa;
+  border-color: #b2c9e5;
+  box-shadow: 0 4px 16px #253e5b20;
+}
+body.theme-light .palo-quick-nav button {
+  background: #eaf4ff;
+  color: #174673;
+  border-color: #8eb8e2;
+}
+body.theme-light .palo-enter-hint {
+  background: #eaf4ff;
+  border-color: #b0ccea;
+  color: #1e4269;
+}
+body.theme-light .palo-enter-hint kbd {
+  background: #fff;
+  color: #174673;
+  border-color: #8eb8e2;
+}
+body.theme-light .palo-step-workflow {
+  background: #f2f7fd;
+  color: #1e293b;
+  border-color: #b4c9dc;
+}
+body.theme-light .palo-cycle-tabs button {
+  background: #e8eff7;
+  color: #29435d;
+  border-color: #bfcee0;
+}
+body.theme-light .palo-cycle-tabs button.is-active {
+  background: #d5eafe;
+  border-color: #2673ba;
+  color: #153b64;
+}
+body.theme-light .palo-step-nav select {
+  background: #fff;
+  color: #1d2939;
+  border-color: #a8bdd1;
+}
+body.theme-light .palo-step-nav-title span,
+body.theme-light .palo-show-all { color: #49627f; }
+body.theme-light .palo-step-nav button,
+body.theme-light .palo-step-footer button {
+  background: #2d659d;
+  color: #fff;
+}
+body.theme-light .row-actions .archive-duplicate-data {
+  background: #ffefb9;
+  color: #644400;
+  border-color: #c79731;
+}
+@media (max-width: 760px) {
+  .palo-quick-nav { gap: 6px; padding: 8px; }
+  .palo-quick-nav button { padding: 8px 10px; min-height: 42px; font-size: 12px; }
+  .palo-cycle-tabs { grid-template-columns: 1fr 1fr; }
+  .palo-step-nav { grid-template-columns: 1fr 1fr; }
+  .palo-step-nav-title, .palo-step-nav select { grid-column: 1 / -1; }
+  .palo-step-footer button { min-height: 48px; }
+  .row-actions .archive-duplicate-data { min-height: 44px; }
+}
+@media (max-width: 420px) {
+  .palo-cycle-tabs { grid-template-columns: 1fr; }
+  .palo-step-footer { flex-direction: column; }
+}
