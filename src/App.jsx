@@ -128,6 +128,23 @@ function duplicateRecord(record) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+  function duplicateDataOnly(record) {
+    const newId = nextReportId();
+    // Nuova prova: mantiene anagrafica, dati del palo e attrezzature,
+    // senza portare le letture o gli allegati specifici della prova originale.
+    const duplicatedData = {
+      ...DEFAULT_PROJECT,
+      ...(record.data || {}),
+      reportId: newId,
+      pileId: `${record.data?.pileId || "P"}-COPIA`,
+      signature: "",
+    };
+    setData(duplicatedData);
+    setReadings(initialReadings());
+    setPhoto([]);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function downloadArchive() {
     if (!archiveReady) throw new Error("L'archivio non ha ancora terminato il caricamento.");
     const payload = {
@@ -292,7 +309,7 @@ function duplicateRecord(record) {
         </aside>
       </section>
 
-      <Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onExport={exportRecord} onBackup={downloadArchive} onRestore={importArchive} ready={archiveReady} />
+      <Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onDuplicateData={duplicateDataOnly} onExport={exportRecord} onBackup={downloadArchive} onRestore={importArchive} ready={archiveReady} />
     </main>
   </LoginGate>
   );
