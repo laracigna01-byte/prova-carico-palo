@@ -13,7 +13,7 @@ import { calcPalo, validateTest } from "./utils/calculations";
 import { exportReport } from "./pdf/exportReport";
 import { exportCsv } from "./utils/exportCsv";
 import { fmt } from "./utils/formatters";
-import { listTests, nextReportId, saveTest, writeTests, loadServerTests, syncServerTests } from "./utils/storage";
+import { listTests, nextReportId, loadServerTests, syncServerTests } from "./utils/storage";
 import { LoginGate } from "./security/LoginGate";
 export default function App() {
   const [data, setData] = useState(DEFAULT_PROJECT);
@@ -21,6 +21,8 @@ export default function App() {
   const [photo, setPhoto] = useState([]);
   const [archive, setArchive] = useState(listTests());
   const chartRef = useRef(null);
+  const [archiveReady, setArchiveReady] = useState(false);
+  const persistenceQueue = useRef(Promise.resolve());
 
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem("theme") || "dark";
@@ -40,9 +42,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    writeTests(archive);
-    syncServerTests(archive);
-  }, [archive]);
+    if (!archiveReady) return;
+    persistenceQueue.current = persistenceQueue.current
+      .catch(() => {})
+      .then(() => syncServerTests(archive))
+      .catch((error) => console.error("Errore salvataggio archivio pali:", error));
+  }, [archive, archiveReady]);
 
   const result = useMemo(() => calcPalo({
     readings,
@@ -69,7 +74,10 @@ export default function App() {
     const nextData = { ...data, reportId: id };
     setData(nextData);
     const record = { id, savedAt: new Date().toISOString(), data: nextData, readings, photos: Array.isArray(photo) ? photo : photo ? [photo] : [] };
-    setArchive(saveTest(record));
+    setArchive((previous) => {
+      const withoutOld = previous.filter((entry) => entry.id !== id);
+      return [record, ...withoutOld];
+    });
     window.alert(`Prova ${id} salvata in archivio.`);
   }
 
@@ -112,6 +120,61 @@ function duplicateRecord(record) {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+
+  function downloadArchive() {
+    const payload = {
+      format: "dismat-pali-archive",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      tests: archive,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `dismat-pali-archivio-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function importArchive(file) {
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (parsed?.format !== "dismat-pali-archive" || parsed?.version !== 1 || !Array.isArray(parsed.tests)) {
+        throw new Error("Il file non è un backup JSON dell'archivio Pali supportato.");
+      }
+      const incoming = parsed.tests;
+      const ids = new Set();
+      for (const record of incoming) {
+        if (!record || typeof record !== "object" || Array.isArray(record) ||
+            typeof record.id !== "string" || !record.id.trim() ||
+            !record.data || typeof record.data !== "object" || Array.isArray(record.data) ||
+            !record.readings || typeof record.readings !== "object" || Array.isArray(record.readings) ||
+            (record.photos != null && !Array.isArray(record.photos)) || ids.has(record.id)) {
+          throw new Error("Il backup contiene prove non valide o ID duplicati.");
+        }
+        ids.add(record.id);
+      }
+      const existing = new Set(archive.map((item) => item.id));
+      const additions = incoming.filter((item) => !existing.has(item.id));
+      const duplicates = incoming.length - additions.length;
+      if (!additions.length) {
+        window.alert(`Nessuna nuova prova. ${duplicates} già presenti nell'archivio.`);
+        return;
+      }
+      if (!window.confirm(`Importare ${additions.length} prove? ${duplicates} duplicati saranno ignorati. Le prove esistenti non verranno sostituite.`)) return;
+      const merged = [...archive, ...additions];
+      await persistenceQueue.current;
+      await syncServerTests(merged);
+      setArchive(merged);
+      window.alert(`Importazione completata: ${additions.length} prove aggiunte, ${duplicates} già presenti.`);
+    } catch (error) {
+      window.alert(`Importazione non riuscita: ${error.message || "file non valido"}`);
+    }
+  }
 
   function exportCurrent() {
     exportReport({ data, result, photo });
@@ -185,7 +248,7 @@ function duplicateRecord(record) {
         </aside>
       </section>
 
-      <Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onExport={exportRecord} />
+      <Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onExport={exportRecord} onBackup={downloadArchive} onRestore={importArchive} ready={archiveReady} />
     </main>
   </LoginGate>
   );
