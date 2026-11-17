@@ -13,7 +13,7 @@ import { calcPalo, validateTest } from "./utils/calculations";
 import { exportReport } from "./pdf/exportReport";
 import { exportCsv } from "./utils/exportCsv";
 import { fmt } from "./utils/formatters";
-import { listTests, nextReportId, loadServerTests, syncServerTests } from "./utils/storage";
+import { listTests, nextReportId, updateReportCounter, loadServerTests, syncServerTests } from "./utils/storage";
 import { LoginGate } from "./security/LoginGate";
 export default function App() {
   const [data, setData] = useState(DEFAULT_PROJECT);
@@ -35,10 +35,17 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    (async () => {
-      const savedArchive = await loadServerTests();
-      if (savedArchive.length) setArchive(savedArchive);
-    })();
+    let active = true;
+    loadServerTests()
+      .then((savedArchive) => {
+        if (!active) return;
+        setArchive(savedArchive);
+        setArchiveReady(true);
+      })
+      .catch((error) => {
+        console.error("Errore caricamento archivio pali:", error);
+      });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -122,13 +129,14 @@ function duplicateRecord(record) {
 }
 
   function downloadArchive() {
+    if (!archiveReady) throw new Error("L'archivio non ha ancora terminato il caricamento.");
     const payload = {
       format: "dismat-pali-archive",
       version: 1,
       exportedAt: new Date().toISOString(),
       tests: archive,
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(payload)], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -136,44 +144,80 @@ function duplicateRecord(record) {
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+    return { message: `Download avviato: ${archive.length} prove incluse nel file JSON.` };
   }
 
   async function importArchive(file) {
-    if (!file) return;
-    try {
-      const parsed = JSON.parse(await file.text());
-      if (parsed?.format !== "dismat-pali-archive" || parsed?.version !== 1 || !Array.isArray(parsed.tests)) {
-        throw new Error("Il file non è un backup JSON dell'archivio Pali supportato.");
-      }
-      const incoming = parsed.tests;
-      const ids = new Set();
-      for (const record of incoming) {
-        if (!record || typeof record !== "object" || Array.isArray(record) ||
-            typeof record.id !== "string" || !record.id.trim() ||
-            !record.data || typeof record.data !== "object" || Array.isArray(record.data) ||
-            !record.readings || typeof record.readings !== "object" || Array.isArray(record.readings) ||
-            (record.photos != null && !Array.isArray(record.photos)) || ids.has(record.id)) {
-          throw new Error("Il backup contiene prove non valide o ID duplicati.");
-        }
-        ids.add(record.id);
-      }
-      const existing = new Set(archive.map((item) => item.id));
-      const additions = incoming.filter((item) => !existing.has(item.id));
-      const duplicates = incoming.length - additions.length;
-      if (!additions.length) {
-        window.alert(`Nessuna nuova prova. ${duplicates} già presenti nell'archivio.`);
-        return;
-      }
-      if (!window.confirm(`Importare ${additions.length} prove? ${duplicates} duplicati saranno ignorati. Le prove esistenti non verranno sostituite.`)) return;
-      const merged = [...archive, ...additions];
-      await persistenceQueue.current;
-      await syncServerTests(merged);
-      setArchive(merged);
-      window.alert(`Importazione completata: ${additions.length} prove aggiunte, ${duplicates} già presenti.`);
-    } catch (error) {
-      window.alert(`Importazione non riuscita: ${error.message || "file non valido"}`);
+    if (!file || !archiveReady) throw new Error("L'archivio non è ancora pronto.");
+    const parsed = JSON.parse(await file.text());
+    if (parsed?.format !== "dismat-pali-archive" || parsed?.version !== 1 || !Array.isArray(parsed.tests)) {
+      throw new Error("Questo non è un backup JSON valido dell'archivio Palo.");
     }
+    const incoming = parsed.tests;
+    const incomingIds = new Set();
+    for (const record of incoming) {
+      if (!record || typeof record !== "object" || Array.isArray(record) ||
+          typeof record.id !== "string" || !record.id.trim() ||
+          !record.data || typeof record.data !== "object" || Array.isArray(record.data) ||
+          !record.readings || typeof record.readings !== "object" || Array.isArray(record.readings) ||
+          (record.photos != null && !Array.isArray(record.photos)) || incomingIds.has(record.id)) {
+        throw new Error("Il backup contiene prove non valide o ID ripetuti.");
+      }
+      incomingIds.add(record.id);
+    }
+
+    const existing = new Map(archive.map((item) => [item.id, item]));
+    const reservedIds = new Set([...existing.keys(), ...incomingIds]);
+    let sequence = Math.max(0, ...Array.from(reservedIds)
+      .map((id) => /^PAL-(\d{4})-(\d+)$/.exec(id))
+      .filter((match) => match && Number(match[1]) === new Date().getFullYear())
+      .map((match) => Number(match[2])));
+    function uniqueId() {
+      let id;
+      do {
+        sequence += 1;
+        id = `PAL-${new Date().getFullYear()}-${String(sequence).padStart(3, "0")}`;
+      } while (reservedIds.has(id));
+      reservedIds.add(id);
+      return id;
+    }
+
+    const additions = [];
+    let duplicates = 0;
+    let renamed = 0;
+    for (const record of incoming) {
+      const previous = existing.get(record.id);
+      if (!previous) {
+        additions.push(record);
+      } else if (JSON.stringify(previous) === JSON.stringify(record)) {
+        duplicates += 1;
+      } else {
+        const id = uniqueId();
+        additions.push({ ...record, id, data: { ...record.data, reportId: id } });
+        renamed += 1;
+      }
+    }
+    if (!additions.length) return { message: `Nessuna nuova prova da importare: ${duplicates} già presenti.` };
+
+    const summary = [
+      `Nuove prove da importare: ${additions.length}.`,
+      renamed ? `${renamed} con ID diverso (conflitti tra PC): saranno conservate entrambe le prove.` : "",
+      duplicates ? `${duplicates} prove già identiche saranno ignorate.` : "",
+      "Le prove esistenti resteranno intatte. Procedere?",
+    ].filter(Boolean).join("\n");
+    if (!window.confirm(summary)) return { message: "Importazione annullata: nessuna modifica effettuata." };
+
+    const merged = [...archive, ...additions];
+    await persistenceQueue.current;
+    await syncServerTests(merged);
+    updateReportCounter(merged);
+    setArchive(merged);
+    return {
+      message: `Importazione riuscita: ${additions.length} prove aggiunte` +
+        (renamed ? `, ${renamed} ID rinominati` : "") +
+        (duplicates ? `, ${duplicates} duplicati identici ignorati.` : "."),
+    };
   }
 
   function exportCurrent() {
