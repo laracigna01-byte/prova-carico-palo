@@ -47,13 +47,17 @@ export async function capturePaloRight(result,photo,data){
   const [el,ctx]=canvas(900,1510);
   ctx.fillStyle='white';ctx.fillRect(0,0,900,1510);
   section(ctx,'CURVA CARICO - SPOSTAMENTO MEDIO',12,10,876);
-  const points=(result?.rows||[]).filter(r=>asNumber(r.meanSettlement)!==null&&asNumber(r.load)!==null);
-  const exercise=points.filter(r=>['esercizio','scarico_esercizio'].includes(r.cycle));
-  const collaudo=points.filter(r=>['collaudo','scarico_collaudo'].includes(r.cycle));
+  // Le stesse due serie usate dal PDF tecnico, con la medesima sequenza dei punti.
+  // Non ricostruiamo il grafico dalle 31 righe per non cambiarne la forma nel certificato.
+  const valid=p=>asNumber(p?.x)!==null&&asNumber(p?.y)!==null&&Number.isFinite(asNumber(p.x))&&Number.isFinite(asNumber(p.y));
+  const exercise=(result?.chartExercise||[]).filter(valid);
+  const collaudo=(result?.chartTest||[]).filter(valid);
+  const points=[...exercise,...collaudo];
   const x0=92,y0=106,pw=728,ph=650;
-  const maxLoad=Math.max(1,...points.map(r=>Number(r.load)||0));
-  const maxSettlement=Math.max(0.25,...points.map(r=>Number(r.meanSettlement)||0));
-  const plotLoad=Math.ceil(maxLoad/50)*50;
+  const maxLoad=Math.max(1,...points.map(r=>Number(r.x)||0));
+  const maxSettlement=Math.max(0.25,...points.map(r=>Number(r.y)||0));
+  const loadStep=maxLoad<=5000?1000:maxLoad<=10000?2000:5000;
+  const plotLoad=Math.ceil(maxLoad/loadStep)*loadStep;
   const plotSettlement=Math.ceil(maxSettlement*4)/4;
   ctx.strokeStyle='#cbd0d5';ctx.lineWidth=1;
   for(let i=0;i<=5;i++){
@@ -62,13 +66,13 @@ export async function capturePaloRight(result,photo,data){
     text(ctx,formatted(i*plotLoad/5,0),x-8,y0-15,'16px Arial');
     text(ctx,formatted(i*plotSettlement/5,2),15,y+6,'16px Arial');
   }
-  text(ctx,'Carico applicato [kN]',365,79,'19px Arial');
+  text(ctx,'Carico applicato [daN]',365,79,'19px Arial');
   text(ctx,'Cedimento [mm]',14,94,'17px Arial');
   function plot(series,color){
     let previous=null;ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=4;
     series.forEach(r=>{
-      const x=x0+(Number(r.load)/plotLoad)*pw;
-      const y=y0+(Number(r.meanSettlement)/plotSettlement)*ph;
+      const x=x0+(Number(r.x)/plotLoad)*pw;
+      const y=y0+(Number(r.y)/plotSettlement)*ph;
       if(previous){ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(x,y);ctx.stroke();}
       ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();previous={x,y};
     });
