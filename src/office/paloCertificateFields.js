@@ -7,6 +7,13 @@ export function firmaLaboratorioLabel(office = {}) {
   return ruolo === 'vice' ? 'Il Vicedirettore del Laboratorio' : 'Il Direttore del Laboratorio';
 }
 
+export function firmaLaboratorioNome(office = {}) {
+  // Nominativi fissi richiesti per la firma; non dipendono dai campi storici
+  // eventualmente salvati dalla vecchia elaborazione.
+  const ruolo = office.ruoloFirmatarioLaboratorio ?? office.ruoloDirezioneLavori ?? 'direttore';
+  return ruolo === 'vice' ? 'Dott. Ing Giuseppe Navarra' : 'Dott. Ing. Elio Lo Giudice';
+}
+
 export function certificateRows(data = {}, office = {}) {
   const rows = [
     ['Oggetto dei lavori', 'oggettoLavori'],
