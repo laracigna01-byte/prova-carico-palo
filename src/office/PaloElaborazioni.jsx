@@ -8,7 +8,7 @@ import './paloOffice.css';
 
 const PROJECT_FIELDS=[
   ['dataProva','Data della prova'],['cantiere','Cantiere'],['pileId','Identificativo palo'],
-  ['localita','Ubicazione cantiere'],['committente','Committente'],['direzioneLavori','Nome Direttore / Vicedirettore dei lavori'],
+  ['localita','Ubicazione cantiere'],['committente','Committente'],['direzioneLavori','Direttore dei lavori'],
   ['impresa','Impresa'],['tecnico','Tecnico esecutore']
 ];
 const OFFICE_FIELDS=[
@@ -18,7 +18,7 @@ const OFFICE_FIELDS=[
   ['oggettoLavori','Oggetto dei lavori'],
   ['richiedente','Richiedente'],
   ['direttoreStabilimento','Direttore di stabilimento / produzione'],
-  ['nomeSperimentatore','Nome sperimentatore'],['nomeDirettoreLaboratorio','Nome direttore del laboratorio']
+  ['nomeSperimentatore','Nome sperimentatore'],['nomeDirettoreLaboratorio','Nome firmatario (Direttore / Vicedirettore del Laboratorio)']
 ];
 function defaultOffice(data={}){
   return {naturaCampioni:'PALO',richiedente:data.committente||'',nomeSperimentatore:data.tecnico||''};
@@ -190,18 +190,6 @@ export function PaloElaborazioni({current,onClose}){
                 onChange={e=>edit(key,e.target.value)}/>
                 {Object.prototype.hasOwnProperty.call(draft,key)&&<button type="button" className="office-reset" title="Ripristina valore cantiere" onClick={()=>reset(key)}>↶</button>}
               </div></label>)}</div>
-            <fieldset className="office-document-choice office-optional-fields">
-              <legend>Qualifica della direzione lavori nel certificato</legend>
-              <div className="office-document-options office-document-options--two">
-                {[['direttore','Direttore dei lavori'],['vice','Vicedirettore dei lavori']].map(([value,label])=>
-                  <label key={value} className={'office-document-option '+((merged?.ruoloDirezioneLavori||'direttore')===value?'selected':'')}>
-                    <input type="radio" name="qualificaDirezioneLavoriPalo" checked={(merged?.ruoloDirezioneLavori||'direttore')===value}
-                      onChange={()=>edit('ruoloDirezioneLavori',value)}/>
-                    <span>{label}</span>
-                  </label>
-                )}
-              </div>
-            </fieldset>
             <div className="office-resultstrip" style={{marginTop:16}}>
               <div><span>Carico di esercizio</span><strong>{result?.baseLoad?.toLocaleString('it-IT')??'—'}</strong><small>kN</small></div>
               <div><span>Carico massimo di collaudo</span><strong>{result?.maxTestLoad?.toLocaleString('it-IT')??'—'}</strong><small>kN</small></div>
@@ -212,6 +200,20 @@ export function PaloElaborazioni({current,onClose}){
             <div className="office-cardhead"><h3>02 · Completamento dell'ufficio</h3><span>Modificabile</span></div>
             <div className="office-fields">{OFFICE_FIELDS.map(([key,label])=><label key={key}>{label}
               <input type="text" value={merged?.[key]??''} onChange={e=>edit(key,e.target.value)}/></label>)}</div>
+            <fieldset className="office-document-choice office-optional-fields">
+              <legend>Firmatario in calce al certificato</legend>
+              <p className="office-small">La direzione dei lavori nei dati generali non cambia. Qui scegli chi firma per il laboratorio.</p>
+              <div className="office-document-options office-document-options--two">
+                {[['direttore','Direttore del Laboratorio'],['vice','Vicedirettore del Laboratorio']].map(([value,label)=>
+                  <label key={value} className={'office-document-option '+((merged?.ruoloFirmatarioLaboratorio??merged?.ruoloDirezioneLavori??'direttore')===value?'selected':'')}>
+                    <input type="radio" name="qualificaFirmaLaboratorioPalo"
+                      checked={(merged?.ruoloFirmatarioLaboratorio??merged?.ruoloDirezioneLavori??'direttore')===value}
+                      onChange={()=>edit('ruoloFirmatarioLaboratorio',value)}/>
+                    <span>{label}</span>
+                  </label>
+                )}
+              </div>
+            </fieldset>
             <div className="office-optional-fields">
               <label className="office-check-row">
                 <input type="checkbox" checked={merged?.mostraProprietario===true}
