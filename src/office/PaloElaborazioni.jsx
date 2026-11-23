@@ -204,7 +204,7 @@ export function PaloElaborazioni({current,onClose}){
               <legend>Firmatario in calce al certificato</legend>
               <p className="office-small">La direzione dei lavori nei dati generali non cambia. Qui scegli chi firma per il laboratorio.</p>
               <div className="office-document-options office-document-options--two">
-                {[['direttore','Direttore del Laboratorio'],['vice','Vicedirettore del Laboratorio']].map(([value,label)=>
+                {[['direttore','Il Direttore del Laboratorio'],['vice','Il Vicedirettore del Laboratorio']].map(([value,label])=>
                   <label key={value} className={'office-document-option '+((merged?.ruoloFirmatarioLaboratorio??merged?.ruoloDirezioneLavori??'direttore')===value?'selected':'')}>
                     <input type="radio" name="qualificaFirmaLaboratorioPalo"
                       checked={(merged?.ruoloFirmatarioLaboratorio??merged?.ruoloDirezioneLavori??'direttore')===value}
