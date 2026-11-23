@@ -1,7 +1,10 @@
 // Etichette del certificato e campi opzionali dell'ufficio.
 // Nessuna modifica ai dati originali del cantiere.
-export function direzioneLabel(office = {}) {
-  return office.ruoloDirezioneLavori === 'vice' ? 'Vicedirettore dei lavori' : 'Direttore dei lavori';
+export function firmaLaboratorioLabel(office = {}) {
+  // Compatibilita con i dati di ufficio salvati prima dello spostamento
+  // della scelta dalla direzione lavori al blocco firme.
+  const ruolo = office.ruoloFirmatarioLaboratorio ?? office.ruoloDirezioneLavori ?? 'direttore';
+  return ruolo === 'vice' ? 'Il Vicedirettore del Laboratorio' : 'Il Direttore del Laboratorio';
 }
 
 export function certificateRows(data = {}, office = {}) {
@@ -9,7 +12,7 @@ export function certificateRows(data = {}, office = {}) {
     ['Oggetto dei lavori', 'oggettoLavori'],
     ['Ubicazione cantiere', 'localita'],
     ['Richiedente', 'richiedente'],
-    [direzioneLabel(office), 'direzioneLavori'],
+    ['Direttore dei lavori', 'direzioneLavori'],
     ['Impresa', 'impresa']
   ];
   if (office.mostraProprietario === true) {

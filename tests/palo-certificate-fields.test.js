@@ -1,14 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {certificateRows,direzioneLabel} from '../src/office/paloCertificateFields.js';
+import {certificateRows,firmaLaboratorioLabel} from '../src/office/paloCertificateFields.js';
 
-test('il ruolo di direzione lavori cambia solo la qualifica in stampa',()=>{
+test('Direttore dei lavori resta sempre nei dati generali, anche se firma il vice in fondo',()=>{
  const data={direzioneLavori:'Ing. Rossi',proprietario:'Ente pubblico',tecnico:'Ing. Bianchi'};
- const dirs=certificateRows(data,{ruoloDirezioneLavori:'direttore'});
- const vice=certificateRows(data,{ruoloDirezioneLavori:'vice'});
- assert.ok(dirs.some(r=>r.label==='Direttore dei lavori'&&r.value==='Ing. Rossi'));
- assert.ok(vice.some(r=>r.label==='Vicedirettore dei lavori'&&r.value==='Ing. Rossi'));
- assert.equal(direzioneLabel({ruoloDirezioneLavori:'vice'}),'Vicedirettore dei lavori');
+ for(const role of ['direttore','vice']){
+   const rows=certificateRows(data,{ruoloFirmatarioLaboratorio:role});
+   assert.ok(rows.some(r=>r.label==='Direttore dei lavori'&&r.value==='Ing. Rossi'));
+   assert.equal(rows.some(r=>r.label==='Vicedirettore dei lavori'),false);
+ }
+ assert.equal(firmaLaboratorioLabel({ruoloFirmatarioLaboratorio:'direttore'}),'Il Direttore del Laboratorio');
+ assert.equal(firmaLaboratorioLabel({ruoloFirmatarioLaboratorio:'vice'}),'Il Vicedirettore del Laboratorio');
+ assert.equal(firmaLaboratorioLabel({ruoloDirezioneLavori:'vice'}),'Il Vicedirettore del Laboratorio');
 });
 
 test('proprietario ente appaltante compare solo se spuntato, senza perdere il dato originale',()=>{

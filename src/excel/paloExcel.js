@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import {capturePaloTable,capturePaloChart,capturePaloPhoto} from './paloCapture.js';
-import {certificateRows} from '../office/paloCertificateFields.js';
+import {certificateRows,firmaLaboratorioLabel} from '../office/paloCertificateFields.js';
 
 // La minuta tecnica si inserisce come immagine, come nella Piastra.
 // I dati del certificato restano celle Excel editabili.
@@ -92,7 +92,7 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
     ext:{width:chartWidth,height:Math.round(chartWidth*860/1200)}
   });
   ws.mergeCells('B58:T58');ws.getCell('B58').value='Lo Sperimentatore';
-  ws.mergeCells('V58:AN58');ws.getCell('V58').value='Il Direttore del Laboratorio';
+  ws.mergeCells('V58:AN58');ws.getCell('V58').value=firmaLaboratorioLabel(office);
   ws.mergeCells('B59:T59');ws.getCell('B59').value=office.nomeSperimentatore||data.tecnico||'';
   ws.mergeCells('V59:AN59');ws.getCell('V59').value=office.nomeDirettoreLaboratorio||'';
   for(const ref of ['B58','B59','V58','V59']){ws.getCell(ref).alignment={horizontal:'center'};ws.getCell(ref).font={name:'Arial',size:8,bold:ref.endsWith('59')}}
