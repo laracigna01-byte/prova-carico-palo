@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import {capturePaloTable,capturePaloChart,capturePaloPhoto} from './paloCapture.js';
-import {certificateRows,firmaLaboratorioLabel} from '../office/paloCertificateFields.js';
+import {certificateRows,firmaLaboratorioLabel,firmaLaboratorioNome} from '../office/paloCertificateFields.js';
 
 // La minuta tecnica si inserisce come immagine, come nella Piastra.
 // I dati del certificato restano celle Excel editabili.
@@ -94,7 +94,7 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
   ws.mergeCells('B58:T58');ws.getCell('B58').value='Lo Sperimentatore';
   ws.mergeCells('V58:AN58');ws.getCell('V58').value=firmaLaboratorioLabel(office);
   ws.mergeCells('B59:T59');ws.getCell('B59').value=office.nomeSperimentatore||data.tecnico||'';
-  ws.mergeCells('V59:AN59');ws.getCell('V59').value=office.nomeDirettoreLaboratorio||'';
+  ws.mergeCells('V59:AN59');ws.getCell('V59').value=firmaLaboratorioNome(office);
   for(const ref of ['B58','B59','V58','V59']){ws.getCell(ref).alignment={horizontal:'center'};ws.getCell(ref).font={name:'Arial',size:8,bold:ref.endsWith('59')}}
   const detail=book.addWorksheet('LETTURE',{views:[{state:'frozen',ySplit:1}]});
   detail.columns=[{header:'N',key:'n',width:7},{header:'Ciclo',key:'cycle',width:21},{header:'% carico',key:'pct',width:13},{header:'Min',key:'min',width:10},{header:'Pressione bar',key:'bar',width:17},{header:'Carico kN',key:'load',width:17},{header:'C1 mm',key:'c1',width:14},{header:'C2 mm',key:'c2',width:14},{header:'C3 mm',key:'c3',width:14},{header:'Cedimento medio mm',key:'avg',width:23}];
