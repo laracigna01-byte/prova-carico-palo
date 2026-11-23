@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import {capturePaloTable,capturePaloRight} from './paloCapture';
+import {capturePaloTable,capturePaloRight} from './paloCapture.js';
 
 // La minuta tecnica si inserisce come immagine, come nella Piastra.
 // I dati del certificato restano celle Excel editabili.
