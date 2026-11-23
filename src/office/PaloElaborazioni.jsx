@@ -8,17 +8,16 @@ import './paloOffice.css';
 
 const PROJECT_FIELDS=[
   ['dataProva','Data della prova'],['cantiere','Cantiere'],['pileId','Identificativo palo'],
-  ['localita','Ubicazione cantiere'],['committente','Committente'],['direzioneLavori','Direttore dei lavori'],
+  ['localita','Ubicazione cantiere'],['committente','Committente'],['direzioneLavori','Nome Direttore / Vicedirettore dei lavori'],
   ['impresa','Impresa'],['tecnico','Tecnico esecutore']
 ];
 const OFFICE_FIELDS=[
   ['numeroDocumento','Numero documento'],['dataDocumento','Data documento'],
   ['naturaCampioni','Natura dei campioni'],['protocollo','Protocollo'],['dataProtocollo','Data protocollo'],
   ['verbaleAccettazione','Verbale di accettazione nr.'],['dataAccettazione','Data accettazione'],
-  ['consegnaLaboratorio','Consegna in laboratorio'],['oggettoLavori','Oggetto dei lavori'],
-  ['richiedente','Richiedente'],['proprietario','Proprietario / Ente appaltante'],
+  ['oggettoLavori','Oggetto dei lavori'],
+  ['richiedente','Richiedente'],
   ['direttoreStabilimento','Direttore di stabilimento / produzione'],
-  ['collaudatore','Collaudatore / Tecnico verificatore'],['letteraRichiesta','Lettera di richiesta'],
   ['nomeSperimentatore','Nome sperimentatore'],['nomeDirettoreLaboratorio','Nome direttore del laboratorio']
 ];
 function defaultOffice(data={}){
@@ -191,6 +190,18 @@ export function PaloElaborazioni({current,onClose}){
                 onChange={e=>edit(key,e.target.value)}/>
                 {Object.prototype.hasOwnProperty.call(draft,key)&&<button type="button" className="office-reset" title="Ripristina valore cantiere" onClick={()=>reset(key)}>↶</button>}
               </div></label>)}</div>
+            <fieldset className="office-document-choice office-optional-fields">
+              <legend>Qualifica della direzione lavori nel certificato</legend>
+              <div className="office-document-options office-document-options--two">
+                {[['direttore','Direttore dei lavori'],['vice','Vicedirettore dei lavori']].map(([value,label])=>
+                  <label key={value} className={'office-document-option '+((merged?.ruoloDirezioneLavori||'direttore')===value?'selected':'')}>
+                    <input type="radio" name="qualificaDirezioneLavoriPalo" checked={(merged?.ruoloDirezioneLavori||'direttore')===value}
+                      onChange={()=>edit('ruoloDirezioneLavori',value)}/>
+                    <span>{label}</span>
+                  </label>
+                )}
+              </div>
+            </fieldset>
             <div className="office-resultstrip" style={{marginTop:16}}>
               <div><span>Carico di esercizio</span><strong>{result?.baseLoad?.toLocaleString('it-IT')??'—'}</strong><small>kN</small></div>
               <div><span>Carico massimo di collaudo</span><strong>{result?.maxTestLoad?.toLocaleString('it-IT')??'—'}</strong><small>kN</small></div>
@@ -201,6 +212,18 @@ export function PaloElaborazioni({current,onClose}){
             <div className="office-cardhead"><h3>02 · Completamento dell'ufficio</h3><span>Modificabile</span></div>
             <div className="office-fields">{OFFICE_FIELDS.map(([key,label])=><label key={key}>{label}
               <input type="text" value={merged?.[key]??''} onChange={e=>edit(key,e.target.value)}/></label>)}</div>
+            <div className="office-optional-fields">
+              <label className="office-check-row">
+                <input type="checkbox" checked={merged?.mostraProprietario===true}
+                  onChange={e=>edit('mostraProprietario',e.target.checked)}/>
+                <span>Includi la riga «Proprietario / Ente appaltante» nel certificato</span>
+              </label>
+              {merged?.mostraProprietario===true&&
+                <label className="office-owner-entry">Proprietario / Ente appaltante
+                  <input type="text" value={merged?.proprietario??selected.data?.proprietario??''}
+                    onChange={e=>edit('proprietario',e.target.value)}/>
+                </label>}
+            </div>
             <fieldset className="office-document-choice">
               <legend>Tipo di documento</legend>
               <div className="office-document-options">{[
