@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {certificateRows,firmaLaboratorioLabel} from '../src/office/paloCertificateFields.js';
+import {certificateRows,firmaLaboratorioLabel,firmaLaboratorioNome} from '../src/office/paloCertificateFields.js';
 
 test('Direttore dei lavori resta sempre nei dati generali, anche se firma il vice in fondo',()=>{
  const data={direzioneLavori:'Ing. Rossi',proprietario:'Ente pubblico',tecnico:'Ing. Bianchi'};
@@ -12,6 +12,9 @@ test('Direttore dei lavori resta sempre nei dati generali, anche se firma il vic
  assert.equal(firmaLaboratorioLabel({ruoloFirmatarioLaboratorio:'direttore'}),'Il Direttore del Laboratorio');
  assert.equal(firmaLaboratorioLabel({ruoloFirmatarioLaboratorio:'vice'}),'Il Vicedirettore del Laboratorio');
  assert.equal(firmaLaboratorioLabel({ruoloDirezioneLavori:'vice'}),'Il Vicedirettore del Laboratorio');
+ assert.equal(firmaLaboratorioNome({ruoloFirmatarioLaboratorio:'direttore'}),'Dott. Ing. Elio Lo Giudice');
+ assert.equal(firmaLaboratorioNome({ruoloFirmatarioLaboratorio:'vice'}),'Dott. Ing Giuseppe Navarra');
+ assert.equal(firmaLaboratorioNome({ruoloFirmatarioLaboratorio:'vice',nomeDirettoreLaboratorio:'vecchio firmatario'}),'Dott. Ing Giuseppe Navarra');
 });
 
 test('proprietario ente appaltante compare solo se spuntato, senza perdere il dato originale',()=>{
