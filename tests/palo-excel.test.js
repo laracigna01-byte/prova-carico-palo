@@ -50,6 +50,7 @@ test('il certificato Excel contiene 31 gradini, una pagina A4 e grafico/foto sep
   const reloaded=new ExcelJS.Workbook();
   await reloaded.xlsx.load(buf);
   assert.equal(reloaded.getWorksheet('CERTIFICATO').getImages().length,3);
+  assert.equal(reloaded.getWorksheet('CERTIFICATO').getCell('V59').value,'Dott. Ing. Elio Lo Giudice');
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(6).value,66.75);
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(10).value,0.135);
   const alt=await buildPaloExcel({data:{...data,proprietario:'Ente originale'},result,photo:[],
@@ -59,6 +60,8 @@ test('il certificato Excel contiene 31 gradini, una pagina A4 e grafico/foto sep
   assert.equal(altPage.getCell('B8').value,'Direttore dei lavori');
   assert.equal(altPage.getCell('V58').value,'Il Vicedirettore del Laboratorio');
   assert.equal(page.getCell('V58').value,'Il Direttore del Laboratorio');
+  assert.equal(page.getCell('V59').value,'Dott. Ing. Elio Lo Giudice');
+  assert.equal(altPage.getCell('V59').value,'Dott. Ing Giuseppe Navarra');
   assert.equal(altPage.getCell('B10').value,'Proprietario / Ente appaltante');
   assert.equal(altPage.getCell('O10').value,'Ente ufficio');
   assert.equal(page.getCell('B10').value,'Direttore di stabilimento/produzione');
