@@ -16,21 +16,22 @@ function section(ctx,label,x,y,w){
 }
 export function capturePaloTable(result){
   const rows=result?.rows||[];
-  const [el,ctx]=canvas(1200,1570);
+  // Crop only unused whitespace around the 31 readings; the Excel position stays unchanged.
+  const [el,ctx]=canvas(1100,1410);
   ctx.fillStyle='white';ctx.fillRect(0,0,el.width,el.height);
-  section(ctx,'RISULTATI - LETTURE E CEDIMENTI',10,10,1180);
+  section(ctx,'RISULTATI - LETTURE E CEDIMENTI',10,10,1080);
   const cols=[46,159,148,119,135,115,115,115,128];
   const heads=['N','Ciclo','% / min','bar','kN','C1 mm','C2 mm','C3 mm','Ced. mm'];
-  let xx=12;ctx.fillStyle='#e4e7ea';ctx.fillRect(12,55,1170,40);
+  let xx=12;ctx.fillStyle='#e4e7ea';ctx.fillRect(12,55,1080,40);
   heads.forEach((v,i)=>{text(ctx,v,xx+5,81,'bold 17px Arial');xx+=cols[i]});
   const rowH=42;
   rows.forEach((r,i)=>{
     const y=95+i*rowH;
-    if(i%2===0){ctx.fillStyle='#f7f7f7';ctx.fillRect(12,y,1170,rowH);}
-    ctx.strokeStyle='#dedede';ctx.beginPath();ctx.moveTo(12,y+rowH);ctx.lineTo(1182,y+rowH);ctx.stroke();
+    if(i%2===0){ctx.fillStyle='#f7f7f7';ctx.fillRect(12,y,1080,rowH);}
+    ctx.strokeStyle='#dedede';ctx.beginPath();ctx.moveTo(12,y+rowH);ctx.lineTo(1092,y+rowH);ctx.stroke();
     let name=({esercizio:'Esercizio',scarico_esercizio:'Scarico es.',collaudo:'Collaudo',scarico_collaudo:'Scarico col.'})[r.cycle]||r.cycleLabel||'';
     const vals=[r.stepNo||i+1,name,(r.unload?'S':'')+r.percent+'% '+(r.waitMinutes||0)+'m',formatted(r.pressure),formatted(r.load),formatted(r.comparatorValues?.c1,3),formatted(r.comparatorValues?.c2,3),formatted(r.comparatorValues?.c3,3),formatted(r.meanSettlement,3)];
-    let pos=12;vals.forEach((v,k)=>{text(ctx,v,pos+5,y+28,'17px Arial');pos+=cols[k]});
+    let pos=12;vals.forEach((v,k)=>{text(ctx,v,pos+5,y+28,'18px Arial');pos+=cols[k]});
   });
   return el.toDataURL('image/png');
 }
@@ -162,6 +163,6 @@ export async function capturePaloPhoto(photo,data){
     const w=image.width*k,h=image.height*k;
     ctx.drawImage(image,frame.x+(frame.w-w)/2,frame.y+(frame.h-h)/2,w,h);
   }else text(ctx,'Fotografia non presente',445,390,'22px Arial');
-  text(ctx,item?.name||data?.photoCaption||'Foto 1',30,835,'18px Arial');
+  // The single photograph has no printed filename or caption.
   return el.toDataURL('image/png');
 }
