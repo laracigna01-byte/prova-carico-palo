@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import {capturePaloTable,capturePaloRight} from './paloCapture.js';
+import {capturePaloTable,capturePaloChart,capturePaloPhoto} from './paloCapture.js';
 import {certificateRows} from '../office/paloCertificateFields.js';
 
 // La minuta tecnica si inserisce come immagine, come nella Piastra.
@@ -69,13 +69,28 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
   ws.getRow(15).height=16;
   const docTitle=office.tipoDocumento==='RAPPORTO DI PROVA'?'RAPPORTO DI PROVA':'CERTIFICATO DI PROVA';
   fill(ws,'B15:AN15',docTitle+' - CARICO STATICO ASSIALE SU PALO');
+
+  // La tabella resta nella posizione approvata, senza rimpicciolire le letture.
   const table=await capturePaloTable(result);
-  // Una sola fotografia nel certificato, senza alterare gli allegati originali.
-  const right=await capturePaloRight(result,photo,data);
-  const tid=imageDataUrl(book,table),rid=imageDataUrl(book,right);
-  // Metà sinistra: tabella completa 31 gradini; a destra grafico e foto.
+  // Grafico orizzontale e fotografia sono due immagini separate per
+  // mantenere sempre le proporzioni, anche dopo apertura/stampa in Excel.
+  const chart=capturePaloChart(result);
+  const picture=await capturePaloPhoto(photo,data);
+  const tid=imageDataUrl(book,table);
+  const cid=imageDataUrl(book,chart);
+  const pid=imageDataUrl(book,picture);
   if(tid!==null)ws.addImage(tid,{tl:{col:1,row:16},br:{col:21,row:55}});
-  if(rid!==null)ws.addImage(rid,{tl:{col:21,row:16},br:{col:39,row:55}});
+  // Ventaglio completo sulla destra: la larghezza lascia un margine di stampa
+  // e l'altezza e calcolata dal rapporto originale, mai stirata.
+  const chartWidth=410;
+  if(cid!==null)ws.addImage(cid,{
+    tl:{col:21,row:16},
+    ext:{width:chartWidth,height:Math.round(chartWidth*740/1200)}
+  });
+  if(pid!==null)ws.addImage(pid,{
+    tl:{col:21,row:33},
+    ext:{width:chartWidth,height:Math.round(chartWidth*860/1200)}
+  });
   ws.mergeCells('B58:T58');ws.getCell('B58').value='Lo Sperimentatore';
   ws.mergeCells('V58:AN58');ws.getCell('V58').value='Il Direttore del Laboratorio';
   ws.mergeCells('B59:T59');ws.getCell('B59').value=office.nomeSperimentatore||data.tecnico||'';
