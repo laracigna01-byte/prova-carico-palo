@@ -1,17 +1,11 @@
 import ExcelJS from 'exceljs';
 import {capturePaloTable,capturePaloRight} from './paloCapture.js';
+import {certificateRows} from '../office/paloCertificateFields.js';
 
 // La minuta tecnica si inserisce come immagine, come nella Piastra.
 // I dati del certificato restano celle Excel editabili.
 const clean=v=>String(v??'');
 const safeNumber=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(String(v).replace(',','.'));return Number.isFinite(n)?n:null;};
-const ROWS=[
- ['Oggetto dei lavori','oggettoLavori'],['Ubicazione cantiere','localita'],
- ['Richiedente','richiedente'],['Direttore dei lavori','direzioneLavori'],
- ['Impresa','impresa'],['Proprietario / Ente appaltante','proprietario'],
- ['Direttore di stabilimento/produzione','direttoreStabilimento'],['Collaudatore / Tecnico verificatore','collaudatore'],['Prova eseguita da','tecnico'],
- ['Lettera di richiesta','letteraRichiesta']
-];
 function box(sheet,from,to,label,value){
   sheet.mergeCells(from);sheet.mergeCells(to);
   const l=sheet.getCell(from.split(':')[0]),v=sheet.getCell(to.split(':')[0]);
@@ -64,11 +58,14 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
   box(ws,'AA3:AF3','AG3:AN3','Data prova',office.dataProva||data.dataProva);
   box(ws,'B4:F4','G4:N4','Verbale accett.',office.verbaleAccettazione);
   box(ws,'O4:R4','S4:Z4','Data',office.dataAccettazione);
-  box(ws,'AA4:AF4','AG4:AN4','Consegna lab.',office.consegnaLaboratorio);
-  ROWS.forEach(([label,key],i)=>{
-    const value=office[key]??data[key]??(key==='richiedente'?data.committente:key==='localita'?data.cantiere:'');
-    box(ws,`B${i+5}:N${i+5}`,`O${i+5}:AN${i+5}`,label,value);
+  const adminRows=certificateRows(data,office);
+  adminRows.forEach(({label,value},i)=>{
+    const row=i+5;
+    box(ws,`B${row}:N${row}`,`O${row}:AN${row}`,label,value);
   });
+  // Testi lunghi: Oggetto dei lavori visibile su piu righe, senza tagliare il contenuto.
+  ws.getRow(5).height=37;
+  ws.getCell('O5').alignment={vertical:'middle',wrapText:true};
   ws.getRow(15).height=16;
   const docTitle=office.tipoDocumento==='RAPPORTO DI PROVA'?'RAPPORTO DI PROVA':'CERTIFICATO DI PROVA';
   fill(ws,'B15:AN15',docTitle+' - CARICO STATICO ASSIALE SU PALO');
