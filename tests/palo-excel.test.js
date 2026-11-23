@@ -34,6 +34,9 @@ test('il certificato Excel contiene 31 gradini, una pagina A4 e le due immagini 
   assert.equal(page.getImages().length,2);
   assert.match(page.getCell('B15').value,/CERTIFICATO DI PROVA/);
   assert.match(page.getCell('G1').value,/L A B O R A T O R I O/);
+  assert.equal(page.getCell('AA4').value,null,'La consegna in laboratorio deve essere eliminata');
+  assert.equal(page.getCell('O5').alignment.wrapText,true,'L oggetto dei lavori deve andare a capo');
+  assert.ok(page.getRow(5).height>=30);
   assert.equal(book.getWorksheet('LETTURE').rowCount,32);
   assert.equal(book.getWorksheet('LETTURE ORIGINALI').rowCount,94);
   const buf=await book.xlsx.writeBuffer();
@@ -43,6 +46,14 @@ test('il certificato Excel contiene 31 gradini, una pagina A4 e le due immagini 
   assert.equal(reloaded.getWorksheet('CERTIFICATO').getImages().length,2);
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(6).value,66.75);
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(10).value,0.135);
+  const alt=await buildPaloExcel({data:{...data,proprietario:'Ente originale'},result,photo:[],
+    office:{numeroDocumento:'145000',tipoDocumento:'CERTIFICATO DI PROVA',
+      ruoloDirezioneLavori:'vice',mostraProprietario:true,proprietario:'Ente ufficio'}});
+  const altPage=alt.getWorksheet('CERTIFICATO');
+  assert.equal(altPage.getCell('B8').value,'Vicedirettore dei lavori');
+  assert.equal(altPage.getCell('B10').value,'Proprietario / Ente appaltante');
+  assert.equal(altPage.getCell('O10').value,'Ente ufficio');
+  assert.equal(page.getCell('B10').value,'Direttore di stabilimento/produzione');
  }finally{
   globalThis.document=originalDocument;
   globalThis.fetch=originalFetch;
