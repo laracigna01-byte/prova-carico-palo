@@ -54,7 +54,7 @@ test('il certificato Excel contiene 31 gradini, una pagina A4 e grafico/foto sep
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(10).value,0.135);
   const alt=await buildPaloExcel({data:{...data,proprietario:'Ente originale'},result,photo:[],
     office:{numeroDocumento:'145000',tipoDocumento:'CERTIFICATO DI PROVA',
-      ruoloDirezioneLavori:'vice',mostraProprietario:true,proprietario:'Ente ufficio'}});
+      ruoloFirmatarioLaboratorio:'vice',mostraProprietario:true,proprietario:'Ente ufficio'}});
   const altPage=alt.getWorksheet('CERTIFICATO');
   assert.equal(altPage.getCell('B8').value,'Direttore dei lavori');
   assert.equal(altPage.getCell('V58').value,'Il Vicedirettore del Laboratorio');
