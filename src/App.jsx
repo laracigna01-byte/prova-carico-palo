@@ -7,6 +7,7 @@ import { Results } from "./components/Results";
 import { SectionHeader } from "./components/Inputs";
 import { SignaturePad } from "./components/SignaturePad";
 import { Archive } from "./components/Archive";
+import { PaloElaborazioni } from "./office/PaloElaborazioni";
 import { LOAD_STEPS, initialReadings, DEFAULT_PROJECT } from "./config/testConfig";
 import { T } from "./config/theme";
 import { calcPalo, validateTest } from "./utils/calculations";
@@ -17,6 +18,7 @@ import { listTests, nextReportId, updateReportCounter, loadServerTests, syncServ
 import { LoginGate } from "./security/LoginGate";
 export default function App() {
   const [data, setData] = useState(DEFAULT_PROJECT);
+  const [officeOpen, setOfficeOpen] = useState(false);
   const [readings, setReadings] = useState(initialReadings);
   const [photo, setPhoto] = useState([]);
   const [archive, setArchive] = useState(listTests());
@@ -327,12 +329,13 @@ function duplicateRecord(record) {
     appName="Sistema Gestione Prove DISMAT"
     moduleName="Prova di carico su palo"
   >
-    <main className="app-shell">
+    {officeOpen ? <PaloElaborazioni archive={archive} current={{data,readings,photo}} onClose={()=>setOfficeOpen(false)}/> : <main className="app-shell">
       <Header
         theme={theme}
         setTheme={setTheme}
       />
       <nav className="palo-quick-nav" aria-label="Vai a una sezione">
+        <button type="button" onClick={()=>setOfficeOpen(true)}>Elaborazioni</button>
         <button type="button" onClick={() => scrollToArea("palo-dati")}>Dati prova</button>
         <button type="button" onClick={goToReadings}>Letture</button>
         <button type="button" onClick={() => scrollToArea("palo-risultati")}>Risultati e PDF</button>
@@ -435,7 +438,7 @@ function duplicateRecord(record) {
       </section>
 
       <div id="palo-archivio" className="palo-archive-anchor"><Archive items={archive} setItems={setArchive} onOpen={openRecord} onDuplicate={duplicateRecord} onDuplicateData={duplicateDataOnly} onExport={exportRecord} onBackup={downloadArchive} onRestore={importArchive} ready={archiveReady} /></div>
-    </main>
+    </main>}
   </LoginGate>
   );
 }
