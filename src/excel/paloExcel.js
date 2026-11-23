@@ -4,12 +4,12 @@ import {capturePaloTable,capturePaloRight} from './paloCapture';
 // La minuta tecnica si inserisce come immagine, come nella Piastra.
 // I dati del certificato restano celle Excel editabili.
 const clean=v=>String(v??'');
-const safeNumber=v=>v===null||v===undefined||String(v).trim()===''?null:Number(String(v).replace(',','.'));
+const safeNumber=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(String(v).replace(',','.'));return Number.isFinite(n)?n:null;};
 const ROWS=[
  ['Oggetto dei lavori','oggettoLavori'],['Ubicazione cantiere','localita'],
  ['Richiedente','richiedente'],['Direttore dei lavori','direzioneLavori'],
  ['Impresa','impresa'],['Proprietario / Ente appaltante','proprietario'],
- ['Collaudatore / Tecnico verificatore','collaudatore'],['Prova eseguita da','tecnico'],
+ ['Direttore di stabilimento/produzione','direttoreStabilimento'],['Collaudatore / Tecnico verificatore','collaudatore'],['Prova eseguita da','tecnico'],
  ['Lettera di richiesta','letteraRichiesta']
 ];
 function box(sheet,from,to,label,value){
@@ -37,9 +37,11 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
   const book=new ExcelJS.Workbook();book.creator='DISMAT Elaborazioni Palo';
   const ws=book.addWorksheet('CERTIFICATO',{views:[{showGridLines:false}]});
   // Griglia fitta per rispettare il modello storico del laboratorio.
-  for(let i=1;i<=40;i++)ws.getColumn(i).width=2.35;
-  for(let i=1;i<=61;i++)ws.getRow(i).height=12.5;
-  ws.getRow(1).height=66;
+  for(let i=1;i<=41;i++)ws.getColumn(i).width=621/256;
+  ws.getColumn(1).width=146/256;
+  ws.getColumn(42).width=1206/256;
+  for(let i=1;i<=61;i++)ws.getRow(i).height=12.95;
+  ws.getRow(1).height=76;
   ws.pageSetup={paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:1,
     margins:{left:0.16,right:0.16,top:0.17,bottom:0.17,header:0,footer:0},
     printArea:'A1:AN61'};
@@ -51,8 +53,8 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
   }
   ws.mergeCells('G1:AN1');
   const title=ws.getCell('G1');
-  title.value="L A B O R A T O R I O   D I S M A T\nSperimentazione sulle Strutture e sui Materiali da Costruzione\nAutorizzato ai sensi dell'art. 20 Legge 1086/71 con D.M. 415 del 01/12/2020\nc/da Andolina S.S. 122 Km 28 - 92024 CANICATTI' (AG)\ninfo.dismat@gmail.com - www.dismat.it";
-  title.font={name:'Arial',size:8,bold:true,color:{argb:'FF292929'}};
+  title.value="L A B O R A T O R I O\nD I S M A T\nSperimentazione sulle Strutture e sui Materiali da Costruzione\nAutorizzato ai sensi dell'art. 20 Legge 1086/71 con D.M. 415 del 01/12/2020\nc/da Andolina S.S. 122 Km 28 92024 CANICATTI' (AG)\nPI/CF 04534491008 - Reg. Imprese di Agrigento - Cap. Sociale € 280.300 i.v.\ntel. 0922 859406 - info.dismat@gmail.com - www.dismat.it";
+  title.font={name:'Arial',size:7,bold:true,color:{argb:'FF292929'}};
   title.alignment={horizontal:'right',vertical:'middle',wrapText:true};
   box(ws,'B2:F2','G2:N2','Certificato nr.',office.numeroDocumento);
   box(ws,'O2:R2','S2:Z2','Data',office.dataDocumento);
@@ -64,19 +66,21 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
   box(ws,'O4:R4','S4:Z4','Data',office.dataAccettazione);
   box(ws,'AA4:AF4','AG4:AN4','Consegna lab.',office.consegnaLaboratorio);
   ROWS.forEach(([label,key],i)=>{
-    const value=office[key]??data[key]??(key==='richiedente'?data.committente:'');
+    const value=office[key]??data[key]??(key==='richiedente'?data.committente:key==='localita'?data.cantiere:'');
     box(ws,`B${i+5}:N${i+5}`,`O${i+5}:AN${i+5}`,label,value);
   });
-  ws.getRow(14).height=16;
-  fill(ws,'B15:AN15','CERTIFICATO DI PROVA - CARICO STATICO ASSIALE SU PALO');
+  ws.getRow(15).height=16;
+  const docTitle=office.tipoDocumento==='RAPPORTO DI PROVA'?'RAPPORTO DI PROVA':'CERTIFICATO DI PROVA';
+  fill(ws,'B15:AN15',docTitle+' - CARICO STATICO ASSIALE SU PALO');
   const table=await capturePaloTable(result);
+  // Una sola fotografia nel certificato, senza alterare gli allegati originali.
   const right=await capturePaloRight(result,photo,data);
   const tid=imageDataUrl(book,table),rid=imageDataUrl(book,right);
   // Metà sinistra: tabella completa 31 gradini; a destra grafico e foto.
   if(tid!==null)ws.addImage(tid,{tl:{col:1,row:16},br:{col:21,row:55}});
   if(rid!==null)ws.addImage(rid,{tl:{col:21,row:16},br:{col:39,row:55}});
-  ws.mergeCells('B58:T58');ws.getCell('B58').value=office.sperimentatore||'Lo Sperimentatore';
-  ws.mergeCells('V58:AN58');ws.getCell('V58').value=office.direttoreLaboratorio||'Il Direttore del Laboratorio';
+  ws.mergeCells('B58:T58');ws.getCell('B58').value='Lo Sperimentatore';
+  ws.mergeCells('V58:AN58');ws.getCell('V58').value='Il Direttore del Laboratorio';
   ws.mergeCells('B59:T59');ws.getCell('B59').value=office.nomeSperimentatore||data.tecnico||'';
   ws.mergeCells('V59:AN59');ws.getCell('V59').value=office.nomeDirettoreLaboratorio||'';
   for(const ref of ['B58','B59','V58','V59']){ws.getCell(ref).alignment={horizontal:'center'};ws.getCell(ref).font={name:'Arial',size:8,bold:ref.endsWith('59')}}
