@@ -13,7 +13,7 @@ function fakeCanvas(){
  return {width:1,height:1,getContext:()=>context,toDataURL:()=>png};
 }
 
-test('il certificato Excel contiene 31 gradini, una pagina A4 e le due immagini tecniche',async()=>{
+test('il certificato Excel contiene 31 gradini, una pagina A4 e grafico/foto separati',async()=>{
  const originalDocument=globalThis.document,originalFetch=globalThis.fetch;
  globalThis.document={createElement:tag=>{assert.equal(tag,'canvas');return fakeCanvas()}};
  globalThis.fetch=async()=>({ok:false});
@@ -31,18 +31,35 @@ test('il certificato Excel contiene 31 gradini, una pagina A4 e le due immagini 
   assert.equal(page.pageSetup.fitToWidth,1);
   assert.equal(page.pageSetup.fitToHeight,1);
   assert.equal(page.pageSetup.printArea,'A1:AN61');
-  assert.equal(page.getImages().length,2);
+  assert.equal(page.getImages().length,3);
+  const embeds=page.getImages();
+  assert.equal(embeds[1].range.ext.width,410,'Il grafico deve sfruttare la larghezza disponibile');
+  assert.ok(Math.abs(embeds[1].range.ext.width/embeds[1].range.ext.height-(1200/740))<0.015,
+    'L immagine del grafico non puo essere deformata');
+  assert.ok(Math.abs(embeds[2].range.ext.width/embeds[2].range.ext.height-(1200/860))<0.015,
+    'La fotografia deve mantenere le proprie proporzioni');
   assert.match(page.getCell('B15').value,/CERTIFICATO DI PROVA/);
   assert.match(page.getCell('G1').value,/L A B O R A T O R I O/);
+  assert.equal(page.getCell('AA4').value,null,'La consegna in laboratorio deve essere eliminata');
+  assert.equal(page.getCell('O5').alignment.wrapText,true,'L oggetto dei lavori deve andare a capo');
+  assert.ok(page.getRow(5).height>=30);
   assert.equal(book.getWorksheet('LETTURE').rowCount,32);
   assert.equal(book.getWorksheet('LETTURE ORIGINALI').rowCount,94);
   const buf=await book.xlsx.writeBuffer();
   assert.ok(buf.byteLength>2000,'La cartella Excel deve essere esportabile');
   const reloaded=new ExcelJS.Workbook();
   await reloaded.xlsx.load(buf);
-  assert.equal(reloaded.getWorksheet('CERTIFICATO').getImages().length,2);
+  assert.equal(reloaded.getWorksheet('CERTIFICATO').getImages().length,3);
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(6).value,66.75);
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(10).value,0.135);
+  const alt=await buildPaloExcel({data:{...data,proprietario:'Ente originale'},result,photo:[],
+    office:{numeroDocumento:'145000',tipoDocumento:'CERTIFICATO DI PROVA',
+      ruoloDirezioneLavori:'vice',mostraProprietario:true,proprietario:'Ente ufficio'}});
+  const altPage=alt.getWorksheet('CERTIFICATO');
+  assert.equal(altPage.getCell('B8').value,'Vicedirettore dei lavori');
+  assert.equal(altPage.getCell('B10').value,'Proprietario / Ente appaltante');
+  assert.equal(altPage.getCell('O10').value,'Ente ufficio');
+  assert.equal(page.getCell('B10').value,'Direttore di stabilimento/produzione');
  }finally{
   globalThis.document=originalDocument;
   globalThis.fetch=originalFetch;

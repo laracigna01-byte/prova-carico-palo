@@ -47,13 +47,17 @@ export async function capturePaloRight(result,photo,data){
   const [el,ctx]=canvas(900,1510);
   ctx.fillStyle='white';ctx.fillRect(0,0,900,1510);
   section(ctx,'CURVA CARICO - SPOSTAMENTO MEDIO',12,10,876);
-  const points=(result?.rows||[]).filter(r=>asNumber(r.meanSettlement)!==null&&asNumber(r.load)!==null);
-  const exercise=points.filter(r=>['esercizio','scarico_esercizio'].includes(r.cycle));
-  const collaudo=points.filter(r=>['collaudo','scarico_collaudo'].includes(r.cycle));
+  // Le stesse due serie usate dal PDF tecnico, con la medesima sequenza dei punti.
+  // Non ricostruiamo il grafico dalle 31 righe per non cambiarne la forma nel certificato.
+  const valid=p=>asNumber(p?.x)!==null&&asNumber(p?.y)!==null&&Number.isFinite(asNumber(p.x))&&Number.isFinite(asNumber(p.y));
+  const exercise=(result?.chartExercise||[]).filter(valid);
+  const collaudo=(result?.chartTest||[]).filter(valid);
+  const points=[...exercise,...collaudo];
   const x0=92,y0=106,pw=728,ph=650;
-  const maxLoad=Math.max(1,...points.map(r=>Number(r.load)||0));
-  const maxSettlement=Math.max(0.25,...points.map(r=>Number(r.meanSettlement)||0));
-  const plotLoad=Math.ceil(maxLoad/50)*50;
+  const maxLoad=Math.max(1,...points.map(r=>Number(r.x)||0));
+  const maxSettlement=Math.max(0.25,...points.map(r=>Number(r.y)||0));
+  const loadStep=maxLoad<=5000?1000:maxLoad<=10000?2000:5000;
+  const plotLoad=Math.ceil(maxLoad/loadStep)*loadStep;
   const plotSettlement=Math.ceil(maxSettlement*4)/4;
   ctx.strokeStyle='#cbd0d5';ctx.lineWidth=1;
   for(let i=0;i<=5;i++){
@@ -62,13 +66,13 @@ export async function capturePaloRight(result,photo,data){
     text(ctx,formatted(i*plotLoad/5,0),x-8,y0-15,'16px Arial');
     text(ctx,formatted(i*plotSettlement/5,2),15,y+6,'16px Arial');
   }
-  text(ctx,'Carico applicato [kN]',365,79,'19px Arial');
+  text(ctx,'Carico applicato [daN]',365,79,'19px Arial');
   text(ctx,'Cedimento [mm]',14,94,'17px Arial');
   function plot(series,color){
     let previous=null;ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=4;
     series.forEach(r=>{
-      const x=x0+(Number(r.load)/plotLoad)*pw;
-      const y=y0+(Number(r.meanSettlement)/plotSettlement)*ph;
+      const x=x0+(Number(r.x)/plotLoad)*pw;
+      const y=y0+(Number(r.y)/plotSettlement)*ph;
       if(previous){ctx.beginPath();ctx.moveTo(previous.x,previous.y);ctx.lineTo(x,y);ctx.stroke();}
       ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();previous={x,y};
     });
@@ -88,5 +92,76 @@ export async function capturePaloRight(result,photo,data){
     ctx.drawImage(image,box.x+(box.w-w)/2,box.y+(box.h-h)/2,w,h);
   }else text(ctx,'Fotografia non presente',315,1110,'22px Arial');
   text(ctx,item?.name||data?.photoCaption||'Foto 1',35,1444,'18px Arial');
+  return el.toDataURL('image/png');
+}
+
+/**
+ * Il grafico del certificato ha un'immagine orizzontale indipendente.
+ * Non puo essere deformato dal riquadro verticale di foto + grafico.
+ * Stesse serie del PDF di prova; il PDF e i calcoli restano invariati.
+ */
+export function capturePaloChart(result){
+  const [el,ctx]=canvas(1200,740);
+  ctx.fillStyle='white';ctx.fillRect(0,0,el.width,el.height);
+  section(ctx,'CURVA CARICO - SPOSTAMENTO MEDIO',12,10,1176);
+  const valid=p=>asNumber(p?.x)!==null&&asNumber(p?.y)!==null;
+  const exercise=(result?.chartExercise||[]).filter(valid);
+  const collaudo=(result?.chartTest||[]).filter(valid);
+  const points=[...exercise,...collaudo];
+  const x0=112,y0=103,plotW=1015,plotH=535;
+  if(!points.length){
+    text(ctx,'Grafico disponibile dopo inserimento delle letture',250,350,'24px Arial');
+    return el.toDataURL('image/png');
+  }
+  const maxLoad=Math.max(1,...points.map(p=>Number(p.x)||0));
+  const maxSettlement=Math.max(0.25,...points.map(p=>Number(p.y)||0));
+  const step=maxLoad<=5000?1000:maxLoad<=10000?2000:5000;
+  const plotLoad=Math.ceil(maxLoad/step)*step;
+  const plotSettlement=Math.ceil(maxSettlement*4)/4;
+  ctx.strokeStyle='#cbd0d5';ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){
+    const gx=x0+i*plotW/5,gy=y0+i*plotH/5;
+    ctx.beginPath();ctx.moveTo(gx,y0);ctx.lineTo(gx,y0+plotH);ctx.moveTo(x0,gy);ctx.lineTo(x0+plotW,gy);ctx.stroke();
+    text(ctx,formatted(i*plotLoad/5,0),Math.max(32,gx-18),y0-16,'16px Arial');
+    text(ctx,formatted(i*plotSettlement/5,2),17,gy+7,'16px Arial');
+  }
+  text(ctx,'Carico applicato [daN]',530,77,'21px Arial');
+  text(ctx,'Cedimento [mm]',15,89,'16px Arial');
+  function plot(series,color){
+    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=3.5;
+    let prev=null;
+    series.forEach(p=>{
+      const x=x0+(Number(p.x)/plotLoad)*plotW;
+      const y=y0+(Number(p.y)/plotSettlement)*plotH;
+      if(prev){ctx.beginPath();ctx.moveTo(prev.x,prev.y);ctx.lineTo(x,y);ctx.stroke();}
+      ctx.beginPath();ctx.arc(x,y,4.3,0,Math.PI*2);ctx.fill();prev={x,y};
+    });
+  }
+  plot(exercise,C.blue);plot(collaudo,C.green);
+  ctx.fillStyle=C.blue;ctx.fillRect(276,679,27,6);
+  text(ctx,'Esercizio / scarico',318,688,'19px Arial');
+  ctx.fillStyle=C.green;ctx.fillRect(658,679,27,6);
+  text(ctx,'Collaudo / scarico',702,688,'19px Arial');
+  return el.toDataURL('image/png');
+}
+
+// Una sola fotografia, ritagliata e contenuta senza deformazioni.
+export async function capturePaloPhoto(photo,data){
+  const [el,ctx]=canvas(1200,860);
+  ctx.fillStyle='white';ctx.fillRect(0,0,1200,860);
+  section(ctx,'DOCUMENTAZIONE FOTOGRAFICA',12,10,1176);
+  const list=Array.isArray(photo)?photo:(photo?.dataUrl?[photo]:[]);
+  const item=list.find(p=>p?.dataUrl);
+  const image=await loadPhoto(item?.dataUrl);
+  const frame={x:18,y:56,w:1164,h:740};
+  ctx.strokeStyle='#bebebe';ctx.lineWidth=2;ctx.strokeRect(frame.x,frame.y,frame.w,frame.h);
+  if(image){
+    const margin=19;
+    const wMax=frame.w-2*margin,hMax=frame.h-2*margin;
+    const k=Math.min(wMax/image.width,hMax/image.height);
+    const w=image.width*k,h=image.height*k;
+    ctx.drawImage(image,frame.x+(frame.w-w)/2,frame.y+(frame.h-h)/2,w,h);
+  }else text(ctx,'Fotografia non presente',445,390,'22px Arial');
+  text(ctx,item?.name||data?.photoCaption||'Foto 1',30,835,'18px Arial');
   return el.toDataURL('image/png');
 }
