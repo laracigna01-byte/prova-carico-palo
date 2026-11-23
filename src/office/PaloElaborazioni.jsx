@@ -4,6 +4,7 @@ import {calcPalo} from '../utils/calculations';
 import {exportPaloExcel} from '../excel/paloExcel';
 import {loadOfficeRecords,saveOfficeRecord} from './paloOfficeStore';
 import {parsePaloOfficeJson,toOfficeRecord} from './paloOfficeData';
+import {firmaLaboratorioLabel,firmaLaboratorioNome} from './paloCertificateFields';
 import './paloOffice.css';
 
 const PROJECT_FIELDS=[
@@ -18,7 +19,7 @@ const OFFICE_FIELDS=[
   ['oggettoLavori','Oggetto dei lavori'],
   ['richiedente','Richiedente'],
   ['direttoreStabilimento','Direttore di stabilimento / produzione'],
-  ['nomeSperimentatore','Nome sperimentatore'],['nomeDirettoreLaboratorio','Nome firmatario (Direttore / Vicedirettore del Laboratorio)']
+  ['nomeSperimentatore','Nome sperimentatore']
 ];
 function defaultOffice(data={}){
   return {naturaCampioni:'PALO',richiedente:data.committente||'',nomeSperimentatore:data.tecnico||''};
@@ -213,6 +214,9 @@ export function PaloElaborazioni({current,onClose}){
                   </label>
                 )}
               </div>
+              <p className="office-small" role="status" style={{marginTop:12,fontWeight:700}}>
+                {firmaLaboratorioLabel(merged)} {firmaLaboratorioNome(merged)}
+              </p>
             </fieldset>
             <div className="office-optional-fields">
               <label className="office-check-row">
