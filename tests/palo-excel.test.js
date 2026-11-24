@@ -53,6 +53,30 @@ test('il certificato Excel contiene 31 gradini, una pagina A4 e grafico/foto sep
   assert.equal(reloaded.getWorksheet('CERTIFICATO').getCell('V59').value,'Dott. Ing. Elio Lo Giudice');
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(6).value,66.75);
   assert.equal(reloaded.getWorksheet('LETTURE').getRow(3).getCell(10).value,0.135);
+  // Firma touchpad PNG importata dalla prova: e un'immagine in piu,
+  // non altera tabella, grafico, foto, blocco firme, ne la prova originale.
+  const signed=await buildPaloExcel({data:{...data,signature:png},result,photo:[],
+    office:{numeroDocumento:'145000',tipoDocumento:'CERTIFICATO DI PROVA'}});
+  const signedPage=signed.getWorksheet('CERTIFICATO');
+  const imagesSigned=signedPage.getImages();
+  assert.equal(imagesSigned.length,4,'La firma e la quarta immagine, senza sostituire le tre immagini tecniche');
+  assert.equal(imagesSigned[0].range.br.nativeRow,55,'La tabella non si deve spostare');
+  assert.equal(imagesSigned[1].range.ext.width,410,'Il grafico non cambia larghezza');
+  assert.equal(imagesSigned[3].range.tl.nativeCol,7);
+  assert.equal(imagesSigned[3].range.tl.nativeRow,55);
+  assert.equal(imagesSigned[3].range.ext.width,170);
+  assert.equal(imagesSigned[3].range.ext.height,Math.round(170*180/700));
+  assert.equal(signedPage.getCell('B58').value,'Lo Sperimentatore');
+  assert.equal(signedPage.getCell('B59').value,'Tecnico di prova');
+  assert.equal(signedPage.getCell('V58').value,'Il Direttore del Laboratorio');
+  assert.equal(signedPage.getCell('V59').value,'Dott. Ing. Elio Lo Giudice');
+  assert.equal(signedPage.pageSetup.printArea,'A1:AN61');
+  assert.equal(data.signature,undefined,'La firma non viene scritta sui dati sorgente');
+  const signedBuffer=await signed.xlsx.writeBuffer();
+  const signedReloaded=new ExcelJS.Workbook();
+  await signedReloaded.xlsx.load(signedBuffer);
+  assert.equal(signedReloaded.getWorksheet('CERTIFICATO').getImages().length,4,
+    'Firma autografa incorporata anche nel file XLSX esportato');
   const alt=await buildPaloExcel({data:{...data,proprietario:'Ente originale'},result,photo:[],
     office:{numeroDocumento:'145000',tipoDocumento:'CERTIFICATO DI PROVA',
       ruoloFirmatarioLaboratorio:'vice',mostraProprietario:true,proprietario:'Ente ufficio'}});

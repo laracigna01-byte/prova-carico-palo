@@ -91,6 +91,15 @@ export async function buildPaloExcel({data={},result={},photo=[],office={}}){
     tl:{col:21,row:33},
     ext:{width:chartWidth,height:Math.round(chartWidth*860/1200)}
   });
+  // La firma autografa salvata dal touchpad del cantiere e riutilizzata
+  // senza modificare l'archivio o i report tecnici. Si colloca nello spazio
+  // libero fra l'immagine delle letture (fino a riga 55) e il blocco firme (riga 58).
+  // Se manca una firma originale, mantiene invariato il certificato approvato.
+  const technicalSignature=imageDataUrl(book,data.signature);
+  if(technicalSignature!==null)ws.addImage(technicalSignature,{
+    tl:{col:7,row:55.1},
+    ext:{width:170,height:Math.round(170*180/700)}
+  });
   ws.mergeCells('B58:T58');ws.getCell('B58').value='Lo Sperimentatore';
   ws.mergeCells('V58:AN58');ws.getCell('V58').value=firmaLaboratorioLabel(office);
   ws.mergeCells('B59:T59');ws.getCell('B59').value=office.nomeSperimentatore||data.tecnico||'';
