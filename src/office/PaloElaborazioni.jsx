@@ -4,7 +4,7 @@ import {calcPalo} from '../utils/calculations';
 import {exportPaloExcel} from '../excel/paloExcel';
 import {loadOfficeRecords,saveOfficeRecord} from './paloOfficeStore';
 import {parsePaloOfficeJson,toOfficeRecord} from './paloOfficeData';
-import {firmaLaboratorioLabel,firmaLaboratorioNome} from './paloCertificateFields';
+import {firmaLaboratorioLabel,firmaLaboratorioNome,latestLaboratoryData} from './paloCertificateFields';
 import './paloOffice.css';
 
 const PROJECT_FIELDS=[
@@ -121,6 +121,19 @@ export function PaloElaborazioni({current,onClose}){
       setMessage('Copia della prova aperta importata: i dati del cantiere non sono stati modificati.');
     }catch(error){setMessage('Copia prova non riuscita: '+error.message)}
   }
+  function duplicateLaboratoryData(){
+    if(!selected)return;
+    const reusable=latestLaboratoryData(records,selected.id);
+    if(!reusable){
+      setMessage('Completa e salva prima una prova in Elaborazioni per riutilizzare i dati di laboratorio.');
+      return;
+    }
+    const from=reusable.source.data?.pileId||reusable.source.originalId||'prova precedente';
+    if(!window.confirm('Copiare soltanto i dati comuni di laboratorio dal palo '+from+'? Numeri documento, date, letture e fotografie non saranno copiati.'))return;
+    setDraft(prev=>({...prev,...reusable.values}));
+    setDirty(true);
+    setMessage('Dati di laboratorio copiati da '+from+'. Controlla i campi e salva l’elaborazione.');
+  }
   async function save(){
     if(!selected)throw new Error('Seleziona una prova prima di salvare.');
     const next={...selected,office:{...defaultOffice(selected.data),...selected.office,...draft},officeSavedAt:new Date().toISOString()};
@@ -198,7 +211,7 @@ export function PaloElaborazioni({current,onClose}){
             </div>
           </div>
           <div className="office-card">
-            <div className="office-cardhead"><h3>02 · Completamento dell'ufficio</h3><span>Modificabile</span></div>
+            <div className="office-cardhead"><h3>02 · Dati di laboratorio</h3><span>Modificabili e riutilizzabili</span></div>
             <div className="office-fields">{OFFICE_FIELDS.map(([key,label])=><label key={key}>{label}
               <input type="text" value={merged?.[key]??''} onChange={e=>edit(key,e.target.value)}/></label>)}</div>
             <fieldset className="office-document-choice office-optional-fields">
@@ -229,6 +242,12 @@ export function PaloElaborazioni({current,onClose}){
                   <input type="text" value={merged?.proprietario??selected.data?.proprietario??''}
                     onChange={e=>edit('proprietario',e.target.value)}/>
                 </label>}
+            </div>
+            <div style={{marginTop:14}}>
+              <button type="button" className="office-save" onClick={duplicateLaboratoryData}>Duplica dati laboratorio</button>
+              <p className="office-small" style={{marginTop:8}}>
+                Copia soltanto i dati amministrativi da una prova gia salvata. Non copia letture, identificativi, date, grafici o fotografie.
+              </p>
             </div>
             <fieldset className="office-document-choice">
               <legend>Tipo di documento</legend>
