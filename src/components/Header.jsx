@@ -1,10 +1,13 @@
+import { LuminousSwitch } from "../dismat-ui/LuminousSwitch";
+import "../dismat-ui/application.css";
 import { useAuth } from "../security/AuthContext";
 
 export function Header({ theme, setTheme }) {
   const { logout } = useAuth();
 
   return (
-    <header className="app-header">
+    <header className="app-header du-header">
+        <LuminousSwitch dark={theme === "dark"} onToggle={() => setTheme(theme === "dark" ? "light" : "dark")} />
       <div className="brand">
         <img src="/logo-dismat.jpg" alt="Laboratorio DISMAT" />
         <div>
@@ -19,13 +22,7 @@ export function Header({ theme, setTheme }) {
       </div>
 
       <div className="header-actions">
-        <button
-          type="button"
-          className="theme-btn"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        >
-          {theme === "dark" ? "☀️ Passa al chiaro" : "🌙 Passa allo scuro"}
-        </button>
+        
 
         <button
           type="button"

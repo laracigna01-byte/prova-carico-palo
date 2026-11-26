@@ -1,0 +1,3 @@
+# DISMAT UI — revisione grafica 1
+Base: 1aae1ceab89d1623751ff76aed448f0ff5964bfe (commit di produzione verificato su Vercel).
+Pillola Luminous Switch sole/luna approvata: 116x52, sole dorato, luna argento, nuvole, stelle, animazione elastica, supporto reduced motion. Stato e preferenza tema rimangono nelle funzioni preesistenti. Testata e componenti di compilazione in grafite/ambra/avorio. Nessuna modifica ai calcoli, grafici, dati, autenticazione, generatori PDF/Excel o area ufficio. Verificare entrambe le modalità, mobile, download, archivi, screenshot PDF prima di promuovere. Prima revisione: ancora presenti alcuni colori legacy nelle schermate tecniche e ufficio. Non pubblicare senza collaudo.
